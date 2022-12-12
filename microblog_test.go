@@ -21,7 +21,6 @@ func TestServerReturnsHelloWorld(t *testing.T) {
 
 	mapPostStore := microblog.MapPostStore{}
 	mapPostStore.Post = map[string]string{}
-
 	go microblog.ListenAndServe(mapPostStore)
 
 	resp, err := http.Get("http://127.0.0.1:8080/")
@@ -40,7 +39,7 @@ func TestServerReturnsHelloWorld(t *testing.T) {
 		t.Fatal("test fail")
 	}
 	got := string(read)
-	want := "<h1>hello world</h1>"
+	want := "[bonbon]"
 
 	if !cmp.Equal(want, got) {
 		t.Error(cmp.Diff(want, got))
