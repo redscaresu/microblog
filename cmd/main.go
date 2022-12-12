@@ -4,6 +4,8 @@ import "microblog"
 
 func main() {
 
-	microblog.ListenAndServe()
+	mapPostStore := microblog.MapPostStore{}
+	mapPostStore.Post = map[string]string{}
+	microblog.ListenAndServe(mapPostStore)
 
 }

@@ -8,15 +8,15 @@ type MapPostStore struct {
 	Post map[string]string
 }
 
-func (m MapPostStore) ListAllPost() []string {
+func (m MapPostStore) GetAll() ([]string, error) {
 	posts := []string{}
 	for _, v := range m.Post {
 		posts = append(posts, v)
 	}
-	return posts
+	return posts, nil
 }
 
-func (m *MapPostStore) CreatePost(post string) error {
+func (m MapPostStore) Create(post string) error {
 	m.Post[uuid.NewString()] = post
 	return nil
 }

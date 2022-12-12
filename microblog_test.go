@@ -1,6 +1,7 @@
 package microblog_test
 
 import (
+	"fmt"
 	"io"
 	"microblog"
 	"net/http"
@@ -9,39 +10,42 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-// func TestServerReturnsHelloWorld(t *testing.T) {
+func TestServerReturnsHelloWorld(t *testing.T) {
 
-// 	defer func() {
-// 		if r := recover(); r != nil {
-// 			fmt.Println("Recovered. Error:\n", r)
-// 			t.Fatal(r)
-// 		}
-// 	}()
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Recovered. Error:\n", r)
+			t.Fatal(r)
+		}
+	}()
 
-// 	go microblog.ListenAndServe()
+	mapPostStore := microblog.MapPostStore{}
+	mapPostStore.Post = map[string]string{}
 
-// 	resp, err := http.Get("http://127.0.0.1:8080/")
+	go microblog.ListenAndServe(mapPostStore)
 
-// 	for err != nil {
-// 		t.Log("retrying")
-// 		resp, err = http.Get("http://127.0.0.1:8080/")
-// 	}
+	resp, err := http.Get("http://127.0.0.1:8080/")
 
-// 	if resp.StatusCode != http.StatusOK {
-// 		t.Fatal(resp.StatusCode)
-// 	}
+	for err != nil {
+		t.Log("retrying")
+		resp, err = http.Get("http://127.0.0.1:8080/")
+	}
 
-// 	read, err := io.ReadAll(resp.Body)
-// 	if err != nil {
-// 		t.Fatal("test fail")
-// 	}
-// 	got := string(read)
-// 	want := "<h1>hello world</h1>"
+	if resp.StatusCode != http.StatusOK {
+		t.Fatal(resp.StatusCode)
+	}
 
-// 	if !cmp.Equal(want, got) {
-// 		t.Error(cmp.Diff(want, got))
-// 	}
-// }
+	read, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal("test fail")
+	}
+	got := string(read)
+	want := "<h1>hello world</h1>"
+
+	if !cmp.Equal(want, got) {
+		t.Error(cmp.Diff(want, got))
+	}
+}
 
 func TestMapStorePost(t *testing.T) {
 	m := &microblog.MapPostStore{Post: map[string]string{"1": "foo"}}
@@ -63,7 +67,7 @@ func TestMapStorePost(t *testing.T) {
 		t.Fatal("test fail")
 	}
 	got := string(read)
-	want := "foo"
+	want := "[bonbon]"
 
 	if !cmp.Equal(want, got) {
 		t.Error(cmp.Diff(want, got))

@@ -8,22 +8,35 @@ import (
 	"strings"
 )
 
-func ListenAndServe(m *MapPostStore) error {
+func ListenAndServe(ps PostStore) error {
 
-	TmpDir := "/Users/countdoo/work/microblog/"
+	http.HandleFunc("/write", func(w http.ResponseWriter, r *http.Request) {
+		err := ps.Create(r.FormValue("text"))
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(w, err)
+			return
+		}
+		w.WriteHeader(http.StatusCreated)
+		fmt.Fprint(w, "awesome blog post")
+	})
 
-	h1 := func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, TmpDir+"blog.txt")
-	}
-
-	h2 := func(w http.ResponseWriter, r *http.Request) {
-		CreateBlogEntry(w, r)
-	}
-
-	http.HandleFunc("/write", h2)
-	http.HandleFunc("/", h1)
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		posts, err := ps.GetAll()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(w, err)
+			return
+		}
+		fmt.Fprint(w, posts)
+	})
 
 	return http.ListenAndServe(":8080", nil)
+}
+
+type PostStore interface {
+	Create(string) error
+	GetAll() ([]string, error)
 }
 
 func CreateBlogEntry(w http.ResponseWriter, r *http.Request) {
