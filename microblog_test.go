@@ -28,8 +28,10 @@ func TestServerReturnsHelloWorld(t *testing.T) {
 	}
 	netListener.Close()
 
+	addr := netListener.Addr().String()
+
 	go func() {
-		err := microblog.ListenAndServe(netListener, m)
+		err := microblog.ListenAndServe(addr, m)
 		if err != nil {
 			panic(err)
 		}
@@ -63,13 +65,15 @@ func TestMapStorePost(t *testing.T) {
 	m := &microblog.MapPostStore{Post: map[string]string{"1": "foo"}}
 
 	netListener, err := net.Listen("tcp", "127.0.0.1:")
+	addr := netListener.Addr().String()
+
 	if err != nil {
 		t.Fatal(err)
 	}
 	netListener.Close()
 
 	go func() {
-		err := microblog.ListenAndServe(netListener, m)
+		err := microblog.ListenAndServe(addr, m)
 		if err != nil {
 			panic(err)
 		}

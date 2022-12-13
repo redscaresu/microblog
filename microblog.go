@@ -3,13 +3,12 @@ package microblog
 import (
 	"fmt"
 	"io"
-	"net"
 	"net/http"
 	"os"
 	"strings"
 )
 
-func ListenAndServe(netListener net.Listener, ps PostStore) error {
+func ListenAndServe(addr string, ps PostStore) error {
 	//pass netListener as string not netListener object
 	customMux := http.NewServeMux()
 
@@ -34,7 +33,6 @@ func ListenAndServe(netListener net.Listener, ps PostStore) error {
 		fmt.Fprint(w, posts)
 	})
 
-	addr := netListener.Addr().String()
 	err := http.ListenAndServe(addr, customMux)
 	fmt.Println(err)
 	return err
