@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"microblog"
+	"net"
 	"net/http"
 	"testing"
 
@@ -11,7 +12,7 @@ import (
 )
 
 func TestServerReturnsHelloWorld(t *testing.T) {
-
+	t.Parallel()
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Println("Recovered. Error:\n", r)
@@ -19,9 +20,20 @@ func TestServerReturnsHelloWorld(t *testing.T) {
 		}
 	}()
 
-	mapPostStore := microblog.MapPostStore{}
-	mapPostStore.Post = map[string]string{}
-	go microblog.ListenAndServe(mapPostStore)
+	m := microblog.MapPostStore{}
+	m.Post = map[string]string{}
+	netListener, err := net.Listen("tcp", "127.0.0.1:")
+	if err != nil {
+		t.Fatal(err)
+	}
+	netListener.Close()
+
+	go func() {
+		err := microblog.ListenAndServe(netListener, m)
+		if err != nil {
+			panic(err)
+		}
+	}()
 
 	resp, err := http.Get("http://127.0.0.1:8080/")
 
@@ -47,8 +59,21 @@ func TestServerReturnsHelloWorld(t *testing.T) {
 }
 
 func TestMapStorePost(t *testing.T) {
+	t.Parallel()
 	m := &microblog.MapPostStore{Post: map[string]string{"1": "foo"}}
-	go microblog.ListenAndServe(m)
+
+	netListener, err := net.Listen("tcp", "127.0.0.1:")
+	if err != nil {
+		t.Fatal(err)
+	}
+	netListener.Close()
+
+	go func() {
+		err := microblog.ListenAndServe(netListener, m)
+		if err != nil {
+			panic(err)
+		}
+	}()
 
 	resp, err := http.Get("http://127.0.0.1:8080/")
 

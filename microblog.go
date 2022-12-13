@@ -3,14 +3,17 @@ package microblog
 import (
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"strings"
 )
 
-func ListenAndServe(ps PostStore) error {
+func ListenAndServe(netListener net.Listener, ps PostStore) error {
+	//pass netListener as string not netListener object
+	customMux := http.NewServeMux()
 
-	http.HandleFunc("/write", func(w http.ResponseWriter, r *http.Request) {
+	customMux.HandleFunc("/write", func(w http.ResponseWriter, r *http.Request) {
 		err := ps.Create(r.FormValue("text"))
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -21,7 +24,7 @@ func ListenAndServe(ps PostStore) error {
 		fmt.Fprint(w, "awesome blog post")
 	})
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	customMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		posts, err := ps.GetAll()
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -31,7 +34,10 @@ func ListenAndServe(ps PostStore) error {
 		fmt.Fprint(w, posts)
 	})
 
-	return http.ListenAndServe(":8080", nil)
+	addr := netListener.Addr().String()
+	err := http.ListenAndServe(addr, customMux)
+	fmt.Println(err)
+	return err
 }
 
 type PostStore interface {
