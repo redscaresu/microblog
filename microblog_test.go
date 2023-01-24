@@ -20,8 +20,8 @@ func TestServerReturnsHelloWorld(t *testing.T) {
 		}
 	}()
 
-	m := microblog.MapPostStore{}
-	m.Post = map[string]string{}
+	m := microblog.SlicePostStore{}
+	m.BlogPosts = []microblog.BlogPost{}
 	netListener, err := net.Listen("tcp", "127.0.0.1:")
 	if err != nil {
 		t.Fatal(err)
@@ -60,9 +60,33 @@ func TestServerReturnsHelloWorld(t *testing.T) {
 	}
 }
 
-func TestMapStorePost(t *testing.T) {
+func TestSliceStore(t *testing.T) {
 	t.Parallel()
-	m := &microblog.MapPostStore{Post: map[string]string{"1": "foo"}}
+
+	blogPost := &microblog.BlogPost{Blog_Id: "1", Blog_Post: "bonbon"}
+	store := &microblog.SlicePostStore{BlogPosts: []microblog.BlogPost{*blogPost}}
+
+	addr := newTestServer(t, store)
+
+	resp, err := http.Get("http://" + addr.String())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	read, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal("test fail")
+	}
+	got := string(read)
+	want := "[{1 bonbon}]"
+
+	if !cmp.Equal(want, got) {
+		t.Error(cmp.Diff(want, got))
+	}
+
+}
+
+func newTestServer(t *testing.T, store microblog.PostStore) net.Addr {
 
 	netListener, err := net.Listen("tcp", "127.0.0.1:")
 	addr := netListener.Addr().String()
@@ -73,32 +97,22 @@ func TestMapStorePost(t *testing.T) {
 	netListener.Close()
 
 	go func() {
-		err := microblog.ListenAndServe(addr, m)
+		err := microblog.ListenAndServe(addr, store)
 		if err != nil {
 			panic(err)
 		}
 	}()
 
-	resp, err := http.Get("http://127.0.0.1:8080/")
+	resp, err := http.Get("http:" + addr)
 
 	for err != nil {
 		t.Log("retrying")
-		resp, err = http.Get("http://127.0.0.1:8080/")
+		resp, err = http.Get("http://" + addr)
 	}
 
 	if resp.StatusCode != http.StatusOK {
 		t.Fatal(resp.StatusCode)
 	}
 
-	read, err := io.ReadAll(resp.Body)
-	if err != nil {
-		t.Fatal("test fail")
-	}
-	got := string(read)
-	want := "[bonbon]"
-
-	if !cmp.Equal(want, got) {
-		t.Error(cmp.Diff(want, got))
-	}
-
+	return netListener.Addr()
 }

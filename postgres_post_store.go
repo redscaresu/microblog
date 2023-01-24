@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 )
 
@@ -17,11 +18,6 @@ const (
 
 type PostgresStore struct {
 	DB *sql.DB
-}
-
-type BlogPost struct {
-	Blog_Id   int64  `json:"id"`
-	Blog_Post string `json:"blog_post,omitempty"`
 }
 
 func New() *PostgresStore {
@@ -55,19 +51,18 @@ func (p *PostgresStore) GetAll() ([]BlogPost, error) {
 	}
 
 	for rows.Next() {
-		bp := BlogPost{}
+		bp := NewBlogPost()
 		err := rows.Scan(&bp.Blog_Id, &bp.Blog_Post)
 		if err != nil {
 			panic(err)
 		}
-		blogPosts = append(blogPosts, bp)
+		blogPosts = append(blogPosts, *bp)
 	}
 
-	fmt.Println(blogPosts)
 	return blogPosts, nil
-
 }
 
-func (p *PostgresStore) Create(post string) error {
-	return nil
+func (p *PostgresStore) Create(blogpost BlogPost) (BlogPost, error) {
+	blogpost.Blog_Id = uuid.NewString()
+	return blogpost, nil
 }

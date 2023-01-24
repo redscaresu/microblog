@@ -9,8 +9,8 @@ import (
 
 func main() {
 
-	m := microblog.MapPostStore{}
-	m.Post = map[string]string{}
+	s := microblog.SlicePostStore{}
+	s.BlogPosts = []microblog.BlogPost{}
 
 	// connect to DB
 	psStore := microblog.New()
@@ -24,7 +24,7 @@ func main() {
 	}
 	netListener.Close()
 
-	err = microblog.ListenAndServe(addr, m)
+	err = microblog.ListenAndServe(addr, psStore)
 	if err != nil {
 		fmt.Println(err)
 	}

@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 func ListenAndServe(addr string, ps PostStore) error {
@@ -13,7 +15,8 @@ func ListenAndServe(addr string, ps PostStore) error {
 	customMux := http.NewServeMux()
 
 	customMux.HandleFunc("/write", func(w http.ResponseWriter, r *http.Request) {
-		err := ps.Create(r.FormValue("text"))
+		bg := &BlogPost{Blog_Id: uuid.NewString(), Blog_Post: r.FormValue("bonbon")}
+		_, err := ps.Create(*bg)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			fmt.Fprint(w, err)
@@ -36,11 +39,6 @@ func ListenAndServe(addr string, ps PostStore) error {
 	err := http.ListenAndServe(addr, customMux)
 	fmt.Println(err)
 	return err
-}
-
-type PostStore interface {
-	Create(string) error
-	GetAll() ([]string, error)
 }
 
 func CreateBlogEntry(w http.ResponseWriter, r *http.Request) {
