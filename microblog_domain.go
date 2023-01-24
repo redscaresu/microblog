@@ -1,7 +1,7 @@
 package microblog
 
 type PostStore interface {
-	Create(BlogPost) (BlogPost, error)
+	Create(BlogPost) error
 	GetAll() ([]BlogPost, error)
 }
 

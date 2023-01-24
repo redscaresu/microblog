@@ -15,8 +15,8 @@ func (s SlicePostStore) GetAll() ([]BlogPost, error) {
 	return blogPosts, nil
 }
 
-func (s SlicePostStore) Create(blogpost BlogPost) (BlogPost, error) {
+func (s SlicePostStore) Create(blogpost BlogPost) error {
 
 	blogpost.Blog_Id = uuid.NewString()
-	return blogpost, nil
+	return nil
 }

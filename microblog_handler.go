@@ -16,7 +16,8 @@ func ListenAndServe(addr string, ps PostStore) error {
 
 	customMux.HandleFunc("/write", func(w http.ResponseWriter, r *http.Request) {
 		bg := &BlogPost{Blog_Id: uuid.NewString(), Blog_Post: r.FormValue("bonbon")}
-		_, err := ps.Create(*bg)
+		fmt.Println(bg)
+		err := ps.Create(*bg)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			fmt.Fprint(w, err)

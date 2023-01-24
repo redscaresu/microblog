@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 )
 
@@ -62,7 +61,11 @@ func (p *PostgresStore) GetAll() ([]BlogPost, error) {
 	return blogPosts, nil
 }
 
-func (p *PostgresStore) Create(blogpost BlogPost) (BlogPost, error) {
-	blogpost.Blog_Id = uuid.NewString()
-	return blogpost, nil
+func (p *PostgresStore) Create(blogpost BlogPost) error {
+
+	_, err := p.DB.Query("insert into blog values ($1,$2);", blogpost.Blog_Id, blogpost.Blog_Post)
+	if err != nil {
+		panic(err)
+	}
+	return nil
 }

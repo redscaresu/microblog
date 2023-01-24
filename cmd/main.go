@@ -9,9 +9,6 @@ import (
 
 func main() {
 
-	s := microblog.SlicePostStore{}
-	s.BlogPosts = []microblog.BlogPost{}
-
 	// connect to DB
 	psStore := microblog.New()
 	psStore.GetAll()
