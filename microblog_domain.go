@@ -6,7 +6,7 @@ type PostStore interface {
 }
 
 type BlogPost struct {
-	Blog_Id   string `json:"id"`
+	Blog_Id   int    `json:"id"`
 	Blog_Post string `json:"blog_post,omitempty"`
 }
 

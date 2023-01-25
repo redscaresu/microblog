@@ -17,6 +17,6 @@ func (s SlicePostStore) GetAll() ([]BlogPost, error) {
 
 func (s SlicePostStore) Create(blogpost BlogPost) error {
 
-	blogpost.Blog_Id = uuid.NewString()
+	blogpost.Blog_Id = int(uuid.New().ID())
 	return nil
 }

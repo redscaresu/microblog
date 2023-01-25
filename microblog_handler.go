@@ -15,7 +15,7 @@ func ListenAndServe(addr string, ps PostStore) error {
 	customMux := http.NewServeMux()
 
 	customMux.HandleFunc("/write", func(w http.ResponseWriter, r *http.Request) {
-		bg := &BlogPost{Blog_Id: uuid.NewString(), Blog_Post: r.FormValue("bonbon")}
+		bg := &BlogPost{Blog_Id: int(uuid.New().ID()), Blog_Post: r.FormValue("bonbon")}
 		fmt.Println(bg)
 		err := ps.Create(*bg)
 		if err != nil {
