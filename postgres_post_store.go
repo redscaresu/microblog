@@ -3,16 +3,17 @@ package microblog
 import (
 	"database/sql"
 	"fmt"
+	"os"
 
 	_ "github.com/lib/pq"
 )
 
-const (
-	host     = "localhost"
-	port     = 5432
-	user     = "postgres"
-	password = "postgres"
-	dbname   = "postgres"
+var (
+	host     = os.Getenv("INSTANCE_HOST")
+	port     = os.Getenv("DB_PORT")
+	user     = os.Getenv("DB_USER")
+	password = os.Getenv("DB_USER")
+	dbname   = os.Getenv("DB_NAME")
 )
 
 type PostgresStore struct {
@@ -21,7 +22,7 @@ type PostgresStore struct {
 
 func New() *PostgresStore {
 
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
+	psqlInfo := fmt.Sprintf("host=%s port=%v user=%s "+
 		"password=%s dbname=%s sslmode=disable",
 		host, port, user, password, dbname)
 
