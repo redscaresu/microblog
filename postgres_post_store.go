@@ -3,6 +3,7 @@ package microblog
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"os"
 
 	_ "github.com/lib/pq"
@@ -19,8 +20,10 @@ func New() *PostgresStore {
 	dbName := os.Getenv("DB_NAME")
 	unixSocketPath := os.Getenv("INSTANCE_UNIX_SOCKET")
 
-	psqlInfo := fmt.Sprintf("%s:%s@unix(%s)/%s?parseTime=true",
+	psqlInfo := fmt.Sprintf("%s:%s@unix(/%s)/%s?parseTime=true",
 		user, password, unixSocketPath, dbName)
+
+	log.Println(psqlInfo)
 
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
