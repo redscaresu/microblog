@@ -9,11 +9,12 @@ import (
 )
 
 var (
-	host     = os.Getenv("INSTANCE_HOST")
-	port     = os.Getenv("DB_PORT")
-	user     = os.Getenv("DB_USER")
-	password = os.Getenv("DB_USER")
-	dbname   = os.Getenv("DB_NAME")
+	host           = os.Getenv("INSTANCE_HOST")
+	port           = os.Getenv("DB_PORT")
+	user           = os.Getenv("DB_USER")
+	password       = os.Getenv("DB_USER")
+	dbName         = os.Getenv("DB_NAME")
+	unixSocketPath = os.Getenv("INSTANCE_UNIX_SOCKET")
 )
 
 type PostgresStore struct {
@@ -22,9 +23,12 @@ type PostgresStore struct {
 
 func New() *PostgresStore {
 
-	psqlInfo := fmt.Sprintf("host=%s port=%v user=%s "+
-		"password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
+	// psqlInfo := fmt.Sprintf("host=%s port=%v user=%s "+
+	// 	"password=%s dbname=%s sslmode=disable",
+	// 	host, port, user, password, dbName)
+
+	psqlInfo := fmt.Sprintf("%s:%s@unix(%s)/%s?parseTime=true",
+		user, password, unixSocketPath, dbName)
 
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
