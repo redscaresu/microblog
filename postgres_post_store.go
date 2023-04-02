@@ -12,7 +12,7 @@ var (
 	host           = os.Getenv("INSTANCE_HOST")
 	port           = os.Getenv("DB_PORT")
 	user           = os.Getenv("DB_USER")
-	password       = os.Getenv("DB_USER")
+	password       = os.Getenv("DB_PASSWORD")
 	dbName         = os.Getenv("DB_NAME")
 	unixSocketPath = os.Getenv("INSTANCE_UNIX_SOCKET")
 )
