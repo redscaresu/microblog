@@ -8,22 +8,16 @@ import (
 	_ "github.com/lib/pq"
 )
 
-var (
-	user           = os.Getenv("DB_USER")
-	password       = os.Getenv("DB_PASSWORD")
-	dbName         = os.Getenv("DB_NAME")
-	unixSocketPath = os.Getenv("INSTANCE_UNIX_SOCKET")
-)
-
 type PostgresStore struct {
 	DB *sql.DB
 }
 
 func New() *PostgresStore {
 
-	// psqlInfo := fmt.Sprintf("host=%s port=%v user=%s "+
-	// 	"password=%s dbname=%s sslmode=disable",
-	// 	host, port, user, password, dbName)
+	user := os.Getenv("DB_USER")
+	password := os.Getenv("DB_PASSWORD")
+	dbName := os.Getenv("DB_NAME")
+	unixSocketPath := os.Getenv("INSTANCE_UNIX_SOCKET")
 
 	psqlInfo := fmt.Sprintf("%s:%s@unix(%s)/%s?parseTime=true",
 		user, password, unixSocketPath, dbName)
