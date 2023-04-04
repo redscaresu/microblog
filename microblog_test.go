@@ -13,7 +13,7 @@ import (
 func TestListenAndServe_UsesGivenStore(t *testing.T) {
 	t.Parallel()
 
-	blogPost := &microblog.BlogPost{Blog_Id: 1, Blog_Post: "bonbon"}
+	blogPost := &microblog.BlogPost{Blog_Id: 1, Blog_Post: "blog"}
 	store := &microblog.SlicePostStore{BlogPosts: []microblog.BlogPost{*blogPost}}
 
 	addr := newTestServer(t, store)
@@ -28,7 +28,7 @@ func TestListenAndServe_UsesGivenStore(t *testing.T) {
 		t.Fatal("test fail")
 	}
 	got := string(read)
-	want := "[{1 bonbon}]"
+	want := "[{1 blog}]"
 
 	if !cmp.Equal(want, got) {
 		t.Error(cmp.Diff(want, got))
@@ -65,4 +65,28 @@ func newTestServer(t *testing.T, store microblog.PostStore) net.Addr {
 	}
 
 	return netListener.Addr()
+}
+
+func TestIsAuthenticatedWhenCorrectPasswordProvidedReturnsTrue(t *testing.T) {
+
+	t.Setenv(microblog.MicroblogToken, "password123")
+
+	got := microblog.IsAuthenticated("password123")
+	want := true
+
+	if !cmp.Equal(want, got) {
+		t.Error(cmp.Diff(want, got))
+	}
+}
+
+func TestIsAuthenticatedReturnsFalseWhenIncorrectPasswordProvided(t *testing.T) {
+
+	t.Setenv(microblog.MicroblogToken, "password123")
+
+	got := microblog.IsAuthenticated("hotdog")
+	want := false
+
+	if !cmp.Equal(want, got) {
+		t.Error(cmp.Diff(want, got))
+	}
 }

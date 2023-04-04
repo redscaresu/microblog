@@ -3,6 +3,7 @@ package microblog
 import (
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -15,16 +16,21 @@ func ListenAndServe(addr string, ps PostStore) error {
 	customMux := http.NewServeMux()
 
 	customMux.HandleFunc("/write", func(w http.ResponseWriter, r *http.Request) {
-		bg := &BlogPost{Blog_Id: int(uuid.New().ID()), Blog_Post: r.FormValue("bonbon")}
-		fmt.Println(bg)
-		err := ps.Create(*bg)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprint(w, err)
-			return
+		userPassword := r.FormValue("password")
+		if IsAuthenticated(userPassword) {
+			bg := &BlogPost{Blog_Id: int(uuid.New().ID()), Blog_Post: r.FormValue("blog")}
+			log.Println(bg)
+			err := ps.Create(*bg)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				fmt.Fprint(w, err)
+				return
+			}
+			w.WriteHeader(http.StatusCreated)
+			fmt.Fprint(w, "awesome blog post")
 		}
-		w.WriteHeader(http.StatusCreated)
-		fmt.Fprint(w, "awesome blog post")
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprint(w, "access denied")
 	})
 
 	customMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
