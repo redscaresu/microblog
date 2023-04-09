@@ -28,6 +28,7 @@ func ListenAndServe(addr string, ps PostStore) error {
 			}
 			w.WriteHeader(http.StatusCreated)
 			fmt.Fprint(w, "awesome blog post")
+			return
 		}
 		w.WriteHeader(http.StatusUnauthorized)
 		fmt.Fprint(w, "access denied")
