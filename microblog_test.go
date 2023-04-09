@@ -36,7 +36,32 @@ func TestListenAndServe_UsesGivenStore(t *testing.T) {
 
 }
 
+func TestIsAuthenticatedWhenCorrectPasswordProvidedReturnsTrue(t *testing.T) {
+
+	t.Setenv(microblog.MicroblogToken, "password123")
+
+	got := microblog.IsAuthenticated("password123")
+	want := true
+
+	if !cmp.Equal(want, got) {
+		t.Error(cmp.Diff(want, got))
+	}
+}
+
+func TestIsAuthenticatedReturnsFalseWhenIncorrectPasswordProvided(t *testing.T) {
+
+	t.Setenv(microblog.MicroblogToken, "password123")
+
+	got := microblog.IsAuthenticated("hotdog")
+	want := false
+
+	if !cmp.Equal(want, got) {
+		t.Error(cmp.Diff(want, got))
+	}
+}
+
 func newTestServer(t *testing.T, store microblog.PostStore) net.Addr {
+	t.Helper()
 
 	netListener, err := net.Listen("tcp", "127.0.0.1:")
 	addr := netListener.Addr().String()
@@ -65,28 +90,4 @@ func newTestServer(t *testing.T, store microblog.PostStore) net.Addr {
 	}
 
 	return netListener.Addr()
-}
-
-func TestIsAuthenticatedWhenCorrectPasswordProvidedReturnsTrue(t *testing.T) {
-
-	t.Setenv(microblog.MicroblogToken, "password123")
-
-	got := microblog.IsAuthenticated("password123")
-	want := true
-
-	if !cmp.Equal(want, got) {
-		t.Error(cmp.Diff(want, got))
-	}
-}
-
-func TestIsAuthenticatedReturnsFalseWhenIncorrectPasswordProvided(t *testing.T) {
-
-	t.Setenv(microblog.MicroblogToken, "password123")
-
-	got := microblog.IsAuthenticated("hotdog")
-	want := false
-
-	if !cmp.Equal(want, got) {
-		t.Error(cmp.Diff(want, got))
-	}
 }
