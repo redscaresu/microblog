@@ -1,15 +1,19 @@
 package microblog
 
 import (
+	"embed"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"strings"
+	"text/template"
 
 	"github.com/google/uuid"
 )
+
+var templates embed.FS
 
 func ListenAndServe(addr string, ps PostStore) error {
 	//pass netListener as string not netListener object
@@ -34,7 +38,7 @@ func ListenAndServe(addr string, ps PostStore) error {
 		fmt.Fprint(w, "access denied")
 	})
 
-	customMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	customMux.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
 		posts, err := ps.GetAll()
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -44,9 +48,34 @@ func ListenAndServe(addr string, ps PostStore) error {
 		fmt.Fprint(w, posts)
 	})
 
+	customMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		posts, err := ps.GetAll()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(w, err)
+			return
+		}
+
+		err = RenderHTMLTemplate(w, "templates/home.gohtml", posts)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		fmt.Fprint(w, posts)
+	})
+
 	err := http.ListenAndServe(addr, customMux)
 	fmt.Println(err)
 	return err
+}
+
+func RenderHTMLTemplate(w io.Writer, templatePath string, data any) error {
+	tpl := template.Must(template.New("main").ParseFS(templates, "templates/home.gohtml", templatePath))
+	err := tpl.Execute(w, data)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func CreateBlogEntry(w http.ResponseWriter, r *http.Request) {
