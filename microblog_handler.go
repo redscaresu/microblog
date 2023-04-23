@@ -70,7 +70,7 @@ func ListenAndServe(addr string, ps PostStore) error {
 }
 
 func RenderHTMLTemplate(w io.Writer, templatePath string) error {
-	template.Must(template.New("main").ParseFS(templates, "templates/home.gohtml", templatePath))
+	template.Must(template.New("main").ParseFS(templates, "home.gohtml", templatePath))
 	// err := tpl.Execute(w, data)
 	// if err != nil {
 	// 	return err
