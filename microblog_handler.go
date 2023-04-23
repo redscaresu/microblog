@@ -56,7 +56,7 @@ func ListenAndServe(addr string, ps PostStore) error {
 		// 	return
 		// }
 
-		err := RenderHTMLTemplate(w, "templates/home.gohtml")
+		err := RenderHTMLTemplate(w, "home.gohtml")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
