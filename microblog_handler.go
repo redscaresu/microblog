@@ -49,19 +49,19 @@ func ListenAndServe(addr string, ps PostStore) error {
 	})
 
 	customMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		posts, err := ps.GetAll()
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprint(w, err)
-			return
-		}
+		// posts, err := ps.GetAll()
+		// if err != nil {
+		// 	w.WriteHeader(http.StatusInternalServerError)
+		// 	fmt.Fprint(w, err)
+		// 	return
+		// }
 
-		err = RenderHTMLTemplate(w, "templates/home.gohtml", posts)
+		err := RenderHTMLTemplate(w, "templates/home.gohtml")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		fmt.Fprint(w, posts)
+		fmt.Fprint(w)
 	})
 
 	err := http.ListenAndServe(addr, customMux)
@@ -69,12 +69,12 @@ func ListenAndServe(addr string, ps PostStore) error {
 	return err
 }
 
-func RenderHTMLTemplate(w io.Writer, templatePath string, data any) error {
-	tpl := template.Must(template.New("main").ParseFS(templates, "templates/home.gohtml", templatePath))
-	err := tpl.Execute(w, data)
-	if err != nil {
-		return err
-	}
+func RenderHTMLTemplate(w io.Writer, templatePath string) error {
+	template.Must(template.New("main").ParseFS(templates, "templates/home.gohtml", templatePath))
+	// err := tpl.Execute(w, data)
+	// if err != nil {
+	// 	return err
+	// }
 	return nil
 }
 
