@@ -3,17 +3,20 @@ package microblog
 import (
 	"embed"
 	"fmt"
+	"html/template"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"strings"
-	"text/template"
 
 	"github.com/google/uuid"
 )
 
-var templates embed.FS
+var (
+	//go:embed templates/*
+	templates embed.FS
+)
 
 func ListenAndServe(addr string, ps PostStore) error {
 	//pass netListener as string not netListener object
@@ -56,7 +59,7 @@ func ListenAndServe(addr string, ps PostStore) error {
 		// 	return
 		// }
 
-		err := RenderHTMLTemplate(w, "home.gohtml")
+		err := RenderHTMLTemplate(w)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -69,12 +72,12 @@ func ListenAndServe(addr string, ps PostStore) error {
 	return err
 }
 
-func RenderHTMLTemplate(w io.Writer, templatePath string) error {
-	template.Must(template.New("main").ParseFS(templates, "home.gohtml", templatePath))
-	// err := tpl.Execute(w, data)
-	// if err != nil {
-	// 	return err
-	// }
+func RenderHTMLTemplate(w io.Writer) error {
+	blog := template.Must(template.New("main").ParseFS(templates, "templates/home.gohtml"))
+	err := blog.Execute(w, "foo")
+	if err != nil {
+		log.Panic(err)
+	}
 	return nil
 }
 
