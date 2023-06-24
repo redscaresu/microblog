@@ -9,8 +9,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-
-	"github.com/google/uuid"
 )
 
 var (
@@ -22,24 +20,24 @@ func ListenAndServe(addr string, ps PostStore) error {
 	//pass netListener as string not netListener object
 	customMux := http.NewServeMux()
 
-	customMux.HandleFunc("/write", func(w http.ResponseWriter, r *http.Request) {
-		userPassword := r.FormValue("password")
-		if IsAuthenticated(userPassword) {
-			bg := &BlogPost{Blog_Id: int(uuid.New().ID()), Blog_Post: r.FormValue("blog")}
-			log.Println(bg)
-			err := ps.Create(*bg)
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				fmt.Fprint(w, err)
-				return
-			}
-			w.WriteHeader(http.StatusCreated)
-			fmt.Fprint(w, "awesome blog post")
-			return
-		}
-		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprint(w, "access denied")
-	})
+	// customMux.HandleFunc("/write", func(w http.ResponseWriter, r *http.Request) {
+	// 	userPassword := r.FormValue("password")
+	// 	if IsAuthenticated(userPassword) {
+	// 		bg := &BlogPost{Blog_Id: int(uuid.New().ID()), Blog_Post: r.FormValue("blog")}
+	// 		log.Println(bg)
+	// 		err := ps.Create(*bg)
+	// 		if err != nil {
+	// 			w.WriteHeader(http.StatusInternalServerError)
+	// 			fmt.Fprint(w, err)
+	// 			return
+	// 		}
+	// 		w.WriteHeader(http.StatusCreated)
+	// 		fmt.Fprint(w, "awesome blog post")
+	// 		return
+	// 	}
+	// 	w.WriteHeader(http.StatusUnauthorized)
+	// 	fmt.Fprint(w, "access denied")
+	// })
 
 	customMux.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
 		posts, err := ps.GetAll()
