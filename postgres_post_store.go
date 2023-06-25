@@ -18,10 +18,6 @@ func New() *PostgresStore {
 	password := os.Getenv("DB_PASSWORD")
 	dbName := os.Getenv("DB_NAME")
 	unixSocketPath := os.Getenv("INSTANCE_UNIX_SOCKET")
-	// instanceConnectionName := os.Getenv("INSTANCE_CONNECTION_NAME")
-
-	// psqlInfo := fmt.Sprintf("%s:%s@unix(/%s)/%s?parseTime=true",
-	// 	user, password, unixSocketPath, dbName)
 
 	local := os.Getenv("LOCAL")
 
