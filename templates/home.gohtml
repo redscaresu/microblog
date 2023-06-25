@@ -3,22 +3,72 @@
 <html>
   <head>
     <title>My Technical Blog</title>
+    <style>
+      body {
+        background-color: lightblue;
+        color: white;
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+        box-sizing: border-box;
+      }
+
+      h1 {
+        text-align: center;
+        margin-top: 0;
+      }
+
+      .container {
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+      }
+
+      form {
+        max-width: 400px;
+        width: 100%;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 5px;
+      }
+
+      input[type="text"],
+      textarea {
+        width: 100%;
+        padding: 5px;
+        margin-bottom: 10px;
+      }
+
+      button[type="submit"] {
+        padding: 10px 20px;
+        background-color: #4CAF50;
+        border: none;
+        color: white;
+        cursor: pointer;
+        font-size: 16px;
+      }
+
+      button[type="submit"]:hover {
+        background-color: #45a049;
+      }
+    </style>
   </head>
   <body>
     <h1>Welcome to My Technical Blog</h1>
     
-    <form id="post-form">
-      <label for="title">Title:</label>
-      <input type="text" id="title" name="title"><br>
-      
-      <label for="author">Author:</label>
-      <input type="text" id="author" name="author"><br>
-      
-      <label for="content">Content:</label><br>
-      <textarea id="content" name="content"></textarea><br>
-      
-      <button type="submit">Submit</button>
-    </form>
+    <div class="container">
+      <form id="post-form">
+        <label for="title">Title:</label>
+        <input type="text" id="title" name="title"><br>
+        
+        <label for="content">Content:</label><br>
+        <textarea id="content" name="content"></textarea><br>
+        
+        <button type="submit">Submit</button>
+      </form>
+    </div>
     
     <script>
       const form = document.getElementById("post-form");

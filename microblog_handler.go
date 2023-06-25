@@ -26,7 +26,7 @@ type application struct {
 	poststore PostStore
 }
 
-func (app *application) protectedHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) writeHandler(w http.ResponseWriter, r *http.Request) {
 	err := RenderHTMLTemplate(w)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -35,7 +35,7 @@ func (app *application) protectedHandler(w http.ResponseWriter, r *http.Request)
 	fmt.Fprint(w)
 }
 
-func (app *application) unprotectedHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) readAllHandler(w http.ResponseWriter, r *http.Request) {
 	posts, err := app.poststore.GetAll()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -86,8 +86,8 @@ func ListenAndServe(addr string, ps PostStore) error {
 
 	customMux := http.NewServeMux()
 
-	customMux.HandleFunc("/", app.unprotectedHandler)
-	customMux.HandleFunc("/write", app.basicAuth(app.protectedHandler))
+	customMux.HandleFunc("/", app.readAllHandler)
+	customMux.HandleFunc("/write", app.basicAuth(app.writeHandler))
 
 	err := http.ListenAndServe(addr, customMux)
 	fmt.Println(err)
