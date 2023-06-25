@@ -86,8 +86,8 @@ func ListenAndServe(addr string, ps PostStore) error {
 
 	customMux := http.NewServeMux()
 
-	customMux.HandleFunc("/unprotected", app.unprotectedHandler)
-	customMux.HandleFunc("/protected", app.basicAuth(app.protectedHandler))
+	customMux.HandleFunc("/", app.unprotectedHandler)
+	customMux.HandleFunc("/write", app.basicAuth(app.protectedHandler))
 
 	err := http.ListenAndServe(addr, customMux)
 	fmt.Println(err)
