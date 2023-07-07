@@ -72,7 +72,18 @@ func newTestServer(t *testing.T, store microblog.PostStore) net.Addr {
 	netListener.Close()
 
 	go func() {
-		err := microblog.ListenAndServe(addr, store)
+		err := microblog.ListenAndServe(addr,
+			microblog.Application{
+				Auth: struct {
+					Username string
+					Password string
+				}{
+					Username: "foo",
+					Password: "foo",
+				},
+				Poststore: store,
+			},
+		)
 		if err != nil {
 			panic(err)
 		}

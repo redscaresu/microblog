@@ -5,15 +5,17 @@ import (
 	"log"
 	"microblog"
 	"net"
+	"os"
 )
 
 func main() {
 
+	app := microblog.Application{}
 	// connect to DB
 	psStore := microblog.New()
-	psStore.GetAll()
 
-	fmt.Println("foo")
+	app.Poststore = psStore
+	// psStore.GetAll()
 
 	netListener, err := net.Listen("tcp", ":8080")
 	addr := netListener.Addr().String()
@@ -23,7 +25,10 @@ func main() {
 	}
 	netListener.Close()
 
-	err = microblog.ListenAndServe(addr, psStore)
+	app.Auth.Username = os.Getenv("AUTH_USERNAME")
+	app.Auth.Password = os.Getenv("AUTH_PASSWORD")
+
+	err = microblog.ListenAndServe(addr, app)
 	if err != nil {
 		fmt.Println(err)
 	}
