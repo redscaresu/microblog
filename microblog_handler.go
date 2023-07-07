@@ -61,8 +61,6 @@ func (app *application) submitHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println(newBlogPost)
-
 	err = app.poststore.Create(*newBlogPost)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

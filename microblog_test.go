@@ -13,7 +13,7 @@ import (
 func TestListenAndServe_UsesGivenStore(t *testing.T) {
 	t.Parallel()
 
-	blogPost := &microblog.BlogPost{ID: 1, Title: "blog"}
+	blogPost := &microblog.BlogPost{ID: 1, Title: "title", Content: "content"}
 	store := &microblog.SlicePostStore{BlogPosts: []microblog.BlogPost{*blogPost}}
 
 	addr := newTestServer(t, store)
@@ -28,7 +28,7 @@ func TestListenAndServe_UsesGivenStore(t *testing.T) {
 		t.Fatal("test fail")
 	}
 	got := string(read)
-	want := "[{1 blog}]"
+	want := "[{1 title content}]"
 
 	if !cmp.Equal(want, got) {
 		t.Error(cmp.Diff(want, got))
