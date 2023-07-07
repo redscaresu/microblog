@@ -62,7 +62,7 @@ func (p *PostgresStore) GetAll() ([]BlogPost, error) {
 
 	for rows.Next() {
 		bp := NewBlogPost()
-		err := rows.Scan(&bp.Blog_Id, &bp.Blog_Post)
+		err := rows.Scan(&bp.ID, &bp.Title, &bp.Content)
 		if err != nil {
 			panic(err)
 		}
@@ -74,7 +74,7 @@ func (p *PostgresStore) GetAll() ([]BlogPost, error) {
 
 func (p *PostgresStore) Create(blogpost BlogPost) error {
 
-	_, err := p.DB.Query("insert into blog values ($1,$2);", blogpost.Blog_Id, blogpost.Blog_Post)
+	_, err := p.DB.Query("insert into blog values ($1,$2,$3);", blogpost.ID, blogpost.Title, blogpost.Content)
 	if err != nil {
 		panic(err)
 	}

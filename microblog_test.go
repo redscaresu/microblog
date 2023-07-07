@@ -13,7 +13,7 @@ import (
 func TestListenAndServe_UsesGivenStore(t *testing.T) {
 	t.Parallel()
 
-	blogPost := &microblog.BlogPost{Blog_Id: 1, Blog_Post: "blog"}
+	blogPost := &microblog.BlogPost{ID: 1, Title: "blog"}
 	store := &microblog.SlicePostStore{BlogPosts: []microblog.BlogPost{*blogPost}}
 
 	addr := newTestServer(t, store)

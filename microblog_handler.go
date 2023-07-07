@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"crypto/subtle"
 	"embed"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io"
@@ -26,7 +27,7 @@ type application struct {
 	poststore PostStore
 }
 
-func (app *application) writeHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) submitFormHandler(w http.ResponseWriter, r *http.Request) {
 	err := RenderHTMLTemplate(w)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -43,6 +44,32 @@ func (app *application) readAllHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fmt.Fprint(w, posts)
+}
+
+func (app *application) submitHandler(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		http.Error(w, "Failed to parse form data", http.StatusBadRequest)
+		return
+	}
+
+	// title := r.FormValue("title")
+	newBlogPost := &BlogPost{}
+	err = json.NewDecoder(r.Body).Decode(newBlogPost)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	fmt.Println(newBlogPost)
+
+	err = app.poststore.Create(*newBlogPost)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Fprintf(w, "Post submitted successfully!")
 }
 
 func (app *application) basicAuth(next http.HandlerFunc) http.HandlerFunc {
@@ -70,6 +97,7 @@ func (app *application) basicAuth(next http.HandlerFunc) http.HandlerFunc {
 
 func ListenAndServe(addr string, ps PostStore) error {
 
+	fmt.Println("foo")
 	app := new(application)
 	app.poststore = ps
 
@@ -87,7 +115,8 @@ func ListenAndServe(addr string, ps PostStore) error {
 	customMux := http.NewServeMux()
 
 	customMux.HandleFunc("/", app.readAllHandler)
-	customMux.HandleFunc("/write", app.basicAuth(app.writeHandler))
+	customMux.HandleFunc("/submitform", app.basicAuth(app.submitFormHandler))
+	customMux.HandleFunc("/submit", app.basicAuth(app.submitHandler))
 
 	err := http.ListenAndServe(addr, customMux)
 	fmt.Println(err)

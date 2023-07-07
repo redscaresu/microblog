@@ -74,13 +74,25 @@
       const form = document.getElementById("post-form");
       form.addEventListener("submit", async (event) => {
         event.preventDefault();
-        const formData = new FormData(event.target);
+        
+        const title = document.getElementById("title").value;
+        const content = document.getElementById("content").value;
+        
+        const data = {
+          title: title,
+          content: content
+        };
+        
         const response = await fetch("/submit", {
           method: "POST",
-          body: formData
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(data)
         });
+        
         if (response.ok) {
-          alert("Post submitted successfully!");
+          alert(JSON.stringify(data));
           form.reset();
         } else {
           alert("Failed to submit post");

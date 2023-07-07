@@ -6,8 +6,9 @@ type PostStore interface {
 }
 
 type BlogPost struct {
-	Blog_Id   int    `json:"id"`
-	Blog_Post string `json:"blog_post,omitempty"`
+	ID      int64
+	Title   string
+	Content string
 }
 
 func NewBlogPost() *BlogPost {
