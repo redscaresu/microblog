@@ -27,47 +27,25 @@ type Application struct {
 	Poststore PostStore
 }
 
-func (app *Application) submitFormHandler(w http.ResponseWriter, r *http.Request) {
-	err := RenderHTMLTemplate(w)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	fmt.Fprint(w)
-}
+func ListenAndServe(addr string, app Application) error {
 
-func (app *Application) readAllHandler(w http.ResponseWriter, r *http.Request) {
-	posts, err := app.Poststore.GetAll()
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(w, err)
-		return
-	}
-	fmt.Fprint(w, posts)
-}
-
-func (app *Application) submitHandler(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
-	if err != nil {
-		http.Error(w, "Failed to parse form data", http.StatusBadRequest)
-		return
+	if app.Auth.Username == "" {
+		log.Fatal("basic auth username must be provided")
 	}
 
-	// title := r.FormValue("title")
-	newBlogPost := &BlogPost{}
-	err = json.NewDecoder(r.Body).Decode(newBlogPost)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+	if app.Auth.Password == "" {
+		log.Fatal("basic auth password must be provided")
 	}
 
-	err = app.Poststore.Create(*newBlogPost)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	customMux := http.NewServeMux()
 
-	fmt.Fprintf(w, "Post submitted successfully!")
+	customMux.HandleFunc("/", app.readAllHandler)
+	customMux.HandleFunc("/submitform", app.basicAuth(app.submitFormHandler))
+	customMux.HandleFunc("/submit", app.basicAuth(app.submitHandler))
+
+	err := http.ListenAndServe(addr, customMux)
+	fmt.Println(err)
+	return err
 }
 
 func (app *Application) basicAuth(next http.HandlerFunc) http.HandlerFunc {
@@ -93,26 +71,47 @@ func (app *Application) basicAuth(next http.HandlerFunc) http.HandlerFunc {
 	})
 }
 
-func ListenAndServe(addr string, app Application) error {
+func (app *Application) submitFormHandler(w http.ResponseWriter, r *http.Request) {
+	err := RenderHTMLTemplate(w)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	fmt.Fprint(w)
+}
 
-	if app.Auth.Username == "" {
-		log.Fatal("basic auth username must be provided")
+func (app *Application) readAllHandler(w http.ResponseWriter, r *http.Request) {
+	posts, err := app.Poststore.GetAll()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(w, err)
+		return
+	}
+	fmt.Fprint(w, posts)
+}
+
+func (app *Application) submitHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(r)
+	err := r.ParseForm()
+	if err != nil {
+		http.Error(w, "Failed to parse form data", http.StatusBadRequest)
+		return
 	}
 
-	if app.Auth.Password == "" {
-		log.Fatal("basic auth password must be provided")
+	newBlogPost := &BlogPost{}
+	err = json.NewDecoder(r.Body).Decode(newBlogPost)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
-	customMux := http.NewServeMux()
+	err = app.Poststore.Create(*newBlogPost)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-	customMux.HandleFunc("/", app.readAllHandler)
-	customMux.HandleFunc("/submitform", app.basicAuth(app.submitFormHandler))
-	customMux.HandleFunc("/submit", app.basicAuth(app.submitHandler))
-
-	err := http.ListenAndServe(addr, customMux)
-	fmt.Println(err)
-	return err
-
+	fmt.Fprintf(w, "Post submitted successfully!")
 }
 
 func RenderHTMLTemplate(w io.Writer) error {

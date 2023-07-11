@@ -60,6 +60,16 @@ func TestIsAuthenticatedReturnsFalseWhenIncorrectPasswordProvided(t *testing.T) 
 	}
 }
 
+// func TestBlogPost() {
+
+// 	newBlogPost := &microblog.BlogPost{
+// 		ID:      int64(uuid.New().ID()),
+// 		Title:   "foo",
+// 		Content: "foo",
+// 	}
+
+// }
+
 func newTestServer(t *testing.T, store microblog.PostStore) net.Addr {
 	t.Helper()
 
