@@ -1,12 +1,14 @@
 package microblog
 
+import "github.com/google/uuid"
+
 type PostStore interface {
 	Create(BlogPost) error
 	GetAll() ([]BlogPost, error)
 }
 
 type BlogPost struct {
-	ID      int64
+	ID      uuid.UUID
 	Title   string
 	Content string
 }

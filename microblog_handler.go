@@ -91,7 +91,6 @@ func (app *Application) readAllHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *Application) submitHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(r)
 	err := r.ParseForm()
 	if err != nil {
 		http.Error(w, "Failed to parse form data", http.StatusBadRequest)

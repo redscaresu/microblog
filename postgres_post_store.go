@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 )
 
@@ -74,9 +75,27 @@ func (p *PostgresStore) GetAll() ([]BlogPost, error) {
 
 func (p *PostgresStore) Create(blogpost BlogPost) error {
 
+	blogpost.ID = uuid.New()
 	_, err := p.DB.Query("insert into blog values ($1,$2,$3);", blogpost.ID, blogpost.Title, blogpost.Content)
 	if err != nil {
 		panic(err)
 	}
 	return nil
+}
+
+func (p *PostgresStore) Get(id int64) (BlogPost, error) {
+
+	rows, err := p.DB.Query("SELECT * FROM blog WHERE ID == $1;", id)
+	if err != nil {
+		panic(err)
+	}
+
+	bp := NewBlogPost()
+	err = rows.Scan(&bp.ID, &bp.Title, &bp.Content)
+	if err != nil {
+		panic(err)
+	}
+
+	return *bp, nil
+
 }

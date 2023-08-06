@@ -1,19 +1,24 @@
 package microblog_test
 
 import (
+	"database/sql"
+	"fmt"
 	"io"
 	"microblog"
 	"net"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/uuid"
 )
 
 func TestListenAndServe_UsesGivenStore(t *testing.T) {
 	t.Parallel()
 
-	blogPost := &microblog.BlogPost{ID: 1, Title: "title", Content: "content"}
+	id := uuid.New()
+	blogPost := &microblog.BlogPost{ID: id, Title: "title", Content: "content"}
 	store := &microblog.SlicePostStore{BlogPosts: []microblog.BlogPost{*blogPost}}
 
 	addr := newTestServer(t, store)
@@ -28,12 +33,27 @@ func TestListenAndServe_UsesGivenStore(t *testing.T) {
 		t.Fatal("test fail")
 	}
 	got := string(read)
-	want := "[{1 title content}]"
+	want := fmt.Sprintf("[{%s title content}]", id)
 
 	if !cmp.Equal(want, got) {
 		t.Error(cmp.Diff(want, got))
 	}
 
+}
+
+func TestSubmitFormHandler(t *testing.T) {
+
+	store := newTestDBConnection(t)
+	addr := newTestServer(t, store)
+
+	body := strings.NewReader("{\"title\":\"boo\",\"content\":\"foo\"}")
+
+	resp, err := http.Post("http://"+addr.String(), "application/json", body)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fmt.Println(resp)
 }
 
 func TestIsAuthenticatedWhenCorrectPasswordProvidedReturnsTrue(t *testing.T) {
@@ -111,4 +131,33 @@ func newTestServer(t *testing.T, store microblog.PostStore) net.Addr {
 	}
 
 	return netListener.Addr()
+}
+
+func newTestDBConnection(t *testing.T) *microblog.PostgresStore {
+
+	port := "5438"
+	host := "127.0.0.1"
+	user := "postgres"
+	password := "postgres"
+	dbName := "postgres"
+
+	var psqlInfo string
+
+	psqlInfo = fmt.Sprintf("host=%s port=%s user=%s "+
+		"password=%s dbname=%s sslmode=disable",
+		host, port, user, password, dbName)
+
+	db, err := sql.Open("postgres", psqlInfo)
+	if err != nil {
+		panic(err)
+	}
+
+	err = db.Ping()
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("Successfully connected!")
+	return &microblog.PostgresStore{DB: db}
+
 }
