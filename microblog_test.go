@@ -48,7 +48,7 @@ func TestSubmitFormHandler(t *testing.T) {
 
 	body := strings.NewReader("{\"title\":\"boo\",\"content\":\"foo\"}")
 
-	resp, err := http.Post("http://"+addr.String(), "application/json", body)
+	resp, err := http.Post(fmt.Sprintf("http://%v/submit", addr), "application/json", body)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,16 +79,6 @@ func TestIsAuthenticatedReturnsFalseWhenIncorrectPasswordProvided(t *testing.T) 
 		t.Error(cmp.Diff(want, got))
 	}
 }
-
-// func TestBlogPost() {
-
-// 	newBlogPost := &microblog.BlogPost{
-// 		ID:      int64(uuid.New().ID()),
-// 		Title:   "foo",
-// 		Content: "foo",
-// 	}
-
-// }
 
 func newTestServer(t *testing.T, store microblog.PostStore) net.Addr {
 	t.Helper()
