@@ -2,6 +2,7 @@ package microblog_test
 
 import (
 	"database/sql"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"microblog"
@@ -44,16 +45,23 @@ func TestListenAndServe_UsesGivenStore(t *testing.T) {
 func TestSubmitFormHandler(t *testing.T) {
 
 	store := newTestDBConnection(t)
+
 	addr := newTestServer(t, store)
 
 	body := strings.NewReader("{\"title\":\"boo\",\"content\":\"foo\"}")
 
-	resp, err := http.Post(fmt.Sprintf("http://%v/submit", addr), "application/json", body)
+	req, err := http.NewRequest("POST", fmt.Sprintf("http://%v/submit", addr), body)
 	if err != nil {
 		t.Fatal(err)
 	}
+	req.Header.Add("Authorization", "Basic "+basicAuth("username1", "password123"))
 
-	fmt.Println(resp)
+	fmt.Println(req)
+}
+
+func basicAuth(username, password string) string {
+	auth := username + ":" + password
+	return base64.StdEncoding.EncodeToString([]byte(auth))
 }
 
 func TestIsAuthenticatedWhenCorrectPasswordProvidedReturnsTrue(t *testing.T) {
