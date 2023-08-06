@@ -8,6 +8,7 @@ import (
 	"microblog"
 	"net"
 	"net/http"
+	"os"
 	"strings"
 	"testing"
 
@@ -50,17 +51,17 @@ func TestSubmitFormHandler(t *testing.T) {
 
 	body := strings.NewReader("{\"title\":\"boo\",\"content\":\"foo\"}")
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("http://%v/submit", addr), body)
+	endpoint := fmt.Sprintf("http://%v/submit", addr)
+	req, err := http.NewRequest("POST", endpoint, body)
 	if err != nil {
 		t.Fatal(err)
 	}
-	req.Header.Add("Authorization", "Basic "+basicAuth("username1", "password123"))
+	req.Header.Add("Authorization", "Basic "+basicAuth())
 
-	fmt.Println(req)
 }
 
-func basicAuth(username, password string) string {
-	auth := username + ":" + password
+func basicAuth() string {
+	auth := os.Getenv("AUTH_USERNAME") + ":" + os.Getenv(os.Getenv("AUTH_PASSWORD"))
 	return base64.StdEncoding.EncodeToString([]byte(auth))
 }
 

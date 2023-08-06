@@ -15,7 +15,6 @@ func main() {
 	psStore := microblog.New()
 
 	app.Poststore = psStore
-	// psStore.GetAll()
 
 	netListener, err := net.Listen("tcp", ":8080")
 	addr := netListener.Addr().String()
