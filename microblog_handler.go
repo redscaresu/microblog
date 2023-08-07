@@ -10,8 +10,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"os"
-	"strings"
 
 	"github.com/google/uuid"
 )
@@ -129,21 +127,4 @@ func RenderHTMLTemplate(w io.Writer) error {
 		log.Panic(err)
 	}
 	return nil
-}
-
-func CreateBlogEntry(w http.ResponseWriter, r *http.Request) {
-
-	file, err := os.Create("blog.txt")
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(w, err)
-		return
-	}
-
-	defer file.Close()
-
-	_, err = io.Copy(file, strings.NewReader(r.FormValue("text")))
-	if err != nil {
-		fmt.Println(err)
-	}
 }
