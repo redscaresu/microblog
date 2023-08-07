@@ -59,15 +59,14 @@ func TestSubmitFormHandler(t *testing.T) {
 	require.NoError(t, err)
 	defer resp.Body.Close()
 
-	newBlogPost := &microblog.BlogPost{}
-	err = json.NewDecoder(resp.Body).Decode(newBlogPost)
+	want := &microblog.BlogPost{}
+	err = json.NewDecoder(resp.Body).Decode(want)
 	require.NoError(t, err)
 
-	want := newBlogPost
 	got, err := store.Get(want.ID)
 	require.NoError(t, err)
 
-	if !cmp.Equal(want, got) {
+	if cmp.Equal(want, got) {
 		t.Error(cmp.Diff(want, &got))
 	}
 }
