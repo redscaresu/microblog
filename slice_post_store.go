@@ -20,3 +20,8 @@ func (s SlicePostStore) Create(blogpost BlogPost) error {
 	blogpost.ID = uuid.New()
 	return nil
 }
+
+func (s SlicePostStore) Get(id uuid.UUID) (BlogPost, error) {
+
+	return *NewBlogPost(), nil
+}

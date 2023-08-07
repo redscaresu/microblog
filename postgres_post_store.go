@@ -84,13 +84,10 @@ func (p *PostgresStore) Create(blogpost BlogPost) error {
 
 func (p *PostgresStore) Get(id uuid.UUID) (BlogPost, error) {
 
-	rows, err := p.DB.Query("SELECT * FROM blog WHERE ID == $1;", id)
-	if err != nil {
-		panic(err)
-	}
-
 	bp := NewBlogPost()
-	err = rows.Scan(&bp.ID, &bp.Title, &bp.Content)
+
+	err := p.DB.QueryRow("SELECT * FROM blog WHERE blog_id = $1;", id).
+		Scan(&bp.ID, &bp.Title, &bp.Content)
 	if err != nil {
 		panic(err)
 	}

@@ -113,6 +113,12 @@ func (app *Application) submitHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	err = json.NewEncoder(w).Encode(newBlogPost)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	fmt.Fprintf(w, "Post submitted successfully!")
 }
 

@@ -5,6 +5,7 @@ import "github.com/google/uuid"
 type PostStore interface {
 	Create(BlogPost) error
 	GetAll() ([]BlogPost, error)
+	Get(id uuid.UUID) (BlogPost, error)
 }
 
 type BlogPost struct {

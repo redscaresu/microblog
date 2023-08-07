@@ -63,8 +63,13 @@ func TestSubmitFormHandler(t *testing.T) {
 	err = json.NewDecoder(resp.Body).Decode(newBlogPost)
 	require.NoError(t, err)
 
-	fmt.Println(newBlogPost.ID)
+	want := newBlogPost
+	got, err := store.Get(want.ID)
+	require.NoError(t, err)
 
+	if !cmp.Equal(want, got) {
+		t.Error(cmp.Diff(want, &got))
+	}
 }
 
 func basicAuth() string {
@@ -147,9 +152,7 @@ func newTestDBConnection(t *testing.T) *microblog.PostgresStore {
 	password := "postgres"
 	dbName := "postgres"
 
-	var psqlInfo string
-
-	psqlInfo = fmt.Sprintf("host=%s port=%s user=%s "+
+	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
 		"password=%s dbname=%s sslmode=disable",
 		host, port, user, password, dbName)
 
