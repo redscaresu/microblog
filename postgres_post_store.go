@@ -75,7 +75,6 @@ func (p *PostgresStore) GetAll() ([]BlogPost, error) {
 
 func (p *PostgresStore) Create(blogpost BlogPost) error {
 
-	blogpost.ID = uuid.New()
 	_, err := p.DB.Query("insert into blog values ($1,$2,$3);", blogpost.ID, blogpost.Title, blogpost.Content)
 	if err != nil {
 		panic(err)
@@ -83,7 +82,7 @@ func (p *PostgresStore) Create(blogpost BlogPost) error {
 	return nil
 }
 
-func (p *PostgresStore) Get(id int64) (BlogPost, error) {
+func (p *PostgresStore) Get(id uuid.UUID) (BlogPost, error) {
 
 	rows, err := p.DB.Query("SELECT * FROM blog WHERE ID == $1;", id)
 	if err != nil {

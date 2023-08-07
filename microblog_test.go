@@ -3,17 +3,18 @@ package microblog_test
 import (
 	"database/sql"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
 	"microblog"
 	"net"
 	"net/http"
-	"os"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/require"
 )
 
 func TestListenAndServe_UsesGivenStore(t *testing.T) {
@@ -46,22 +47,28 @@ func TestListenAndServe_UsesGivenStore(t *testing.T) {
 func TestSubmitFormHandler(t *testing.T) {
 
 	store := newTestDBConnection(t)
-
 	addr := newTestServer(t, store)
-
 	body := strings.NewReader("{\"title\":\"boo\",\"content\":\"foo\"}")
 
 	endpoint := fmt.Sprintf("http://%v/submit", addr)
 	req, err := http.NewRequest("POST", endpoint, body)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	req.Header.Add("Authorization", "Basic "+basicAuth())
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	newBlogPost := &microblog.BlogPost{}
+	err = json.NewDecoder(resp.Body).Decode(newBlogPost)
+	require.NoError(t, err)
+
+	fmt.Println(newBlogPost.ID)
 
 }
 
 func basicAuth() string {
-	auth := os.Getenv("AUTH_USERNAME") + ":" + os.Getenv(os.Getenv("AUTH_PASSWORD"))
+	auth := "foo" + ":" + "foo"
 	return base64.StdEncoding.EncodeToString([]byte(auth))
 }
 

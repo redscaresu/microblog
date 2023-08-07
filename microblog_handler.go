@@ -12,6 +12,8 @@ import (
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 var (
@@ -44,7 +46,6 @@ func ListenAndServe(addr string, app Application) error {
 	customMux.HandleFunc("/submit", app.basicAuth(app.submitHandler))
 
 	err := http.ListenAndServe(addr, customMux)
-	fmt.Println(err)
 	return err
 }
 
@@ -91,7 +92,6 @@ func (app *Application) readAllHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *Application) submitHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("foo")
 	err := r.ParseForm()
 	if err != nil {
 		http.Error(w, "Failed to parse form data", http.StatusBadRequest)
@@ -104,6 +104,8 @@ func (app *Application) submitHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	newBlogPost.ID = uuid.New()
 
 	err = app.Poststore.Create(*newBlogPost)
 	if err != nil {
