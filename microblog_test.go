@@ -44,6 +44,25 @@ func TestListenAndServe_UsesGivenStore(t *testing.T) {
 
 }
 
+func TestDBCreate(t *testing.T) {
+
+	want := microblog.NewBlogPost()
+	want.ID = uuid.New()
+	want.Title = "foo"
+	want.Content = "foo"
+	store := newTestDBConnection(t)
+
+	err := store.Create(*want)
+	require.NoError(t, err)
+
+	got, err := store.Get(want.ID)
+	require.NoError(t, err)
+
+	if !cmp.Equal(want, &got) {
+		t.Error(cmp.Diff(want, got))
+	}
+}
+
 func TestSubmitFormHandler(t *testing.T) {
 
 	store := newTestDBConnection(t)
