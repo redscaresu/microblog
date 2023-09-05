@@ -2,26 +2,20 @@ package microblog
 
 import "github.com/google/uuid"
 
-type SlicePostStore struct {
+type MemoryPostStore struct {
 	BlogPosts []BlogPost
 }
 
-func (s SlicePostStore) GetAll() ([]BlogPost, error) {
-	blogPosts := []BlogPost{}
-	for _, v := range s.BlogPosts {
-		blogPosts = append(blogPosts, v)
-	}
-
-	return blogPosts, nil
+func (s MemoryPostStore) GetAll() ([]BlogPost, error) {
+	return s.BlogPosts, nil
 }
 
-func (s SlicePostStore) Create(blogpost BlogPost) error {
-
+func (s MemoryPostStore) Create(blogpost BlogPost) error {
 	blogpost.ID = uuid.New()
 	return nil
 }
 
-func (s SlicePostStore) Get(id uuid.UUID) (BlogPost, error) {
+func (s MemoryPostStore) Get(id uuid.UUID) (BlogPost, error) {
 
 	return *NewBlogPost(), nil
 }

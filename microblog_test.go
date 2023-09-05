@@ -22,7 +22,7 @@ func TestListenAndServe_UsesGivenStore(t *testing.T) {
 
 	id := uuid.New()
 	blogPost := &microblog.BlogPost{ID: id, Title: "title", Content: "content"}
-	store := &microblog.SlicePostStore{BlogPosts: []microblog.BlogPost{*blogPost}}
+	store := &microblog.MemoryPostStore{BlogPosts: []microblog.BlogPost{*blogPost}}
 
 	addr := newTestServer(t, store)
 
@@ -65,7 +65,8 @@ func TestDBCreate(t *testing.T) {
 
 func TestSubmitFormHandler(t *testing.T) {
 
-	store := newTestDBConnection(t)
+	// store := newTestDBConnection(t)
+	store := &microblog.MemoryPostStore{}
 	addr := newTestServer(t, store)
 	body := strings.NewReader("{\"title\":\"boo\",\"content\":\"foo\"}")
 
