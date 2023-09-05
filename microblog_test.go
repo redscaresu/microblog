@@ -42,7 +42,7 @@ func TestListenAndServe_UsesGivenStore(t *testing.T) {
 	}
 }
 
-func TestSubmitFormHandler(t *testing.T) {
+func TestSubmitHandler(t *testing.T) {
 
 	// store := newTestDBConnection(t)
 	store := &microblog.MemoryPostStore{}

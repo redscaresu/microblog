@@ -40,8 +40,8 @@ func ListenAndServe(addr string, app Application) error {
 	customMux := http.NewServeMux()
 
 	customMux.HandleFunc("/", app.readAllHandler)
-	customMux.HandleFunc("/submitform", app.basicAuth(app.submitFormHandler))
-	customMux.HandleFunc("/submit", app.basicAuth(app.submitHandler))
+	customMux.HandleFunc("/submit", app.basicAuth(app.Submit))
+	customMux.HandleFunc("/newpost", app.basicAuth(app.NewPostHandler))
 
 	err := http.ListenAndServe(addr, customMux)
 	return err
@@ -70,7 +70,7 @@ func (app *Application) basicAuth(next http.HandlerFunc) http.HandlerFunc {
 	})
 }
 
-func (app *Application) submitFormHandler(w http.ResponseWriter, r *http.Request) {
+func (app *Application) NewPostHandler(w http.ResponseWriter, r *http.Request) {
 	err := RenderHTMLTemplate(w)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -89,7 +89,7 @@ func (app *Application) readAllHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, posts)
 }
 
-func (app *Application) submitHandler(w http.ResponseWriter, r *http.Request) {
+func (app *Application) Submit(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		http.Error(w, "Failed to parse form data", http.StatusBadRequest)
