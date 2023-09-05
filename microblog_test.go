@@ -90,11 +90,6 @@ func TestSubmitFormHandler(t *testing.T) {
 	}
 }
 
-func basicAuth() string {
-	auth := "foo" + ":" + "foo"
-	return base64.StdEncoding.EncodeToString([]byte(auth))
-}
-
 func TestIsAuthenticatedWhenCorrectPasswordProvidedReturnsTrue(t *testing.T) {
 
 	t.Setenv(microblog.MicroblogToken, "password123")
@@ -187,4 +182,9 @@ func newTestDBConnection(t *testing.T) *microblog.PostgresStore {
 	fmt.Println("Successfully connected!")
 	return &microblog.PostgresStore{DB: db}
 
+}
+
+func basicAuth() string {
+	auth := "foo" + ":" + "foo"
+	return base64.StdEncoding.EncodeToString([]byte(auth))
 }
