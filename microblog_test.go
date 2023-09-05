@@ -1,6 +1,7 @@
 package microblog_test
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -91,6 +92,31 @@ func TestIsAuthenticatedReturnsFalseWhenIncorrectPasswordProvided(t *testing.T) 
 
 	if !cmp.Equal(want, got) {
 		t.Error(cmp.Diff(want, got))
+	}
+}
+
+func TestNewPostHandler(t *testing.T) {
+	t.Parallel()
+
+	store := &microblog.MemoryPostStore{}
+	addr := newTestServer(t, store)
+
+	endpoint := fmt.Sprintf("http://%v/newpost", addr)
+	req, err := http.NewRequest("GET", endpoint, nil)
+	require.NoError(t, err)
+
+	req.Header.Add("Authorization", "Basic "+basicAuth())
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal("test fail")
+	}
+
+	if !bytes.Contains(data, []byte("post-form")) {
+		t.Fatalf("%s, %s", data, "form does not contain string")
 	}
 }
 
