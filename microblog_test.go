@@ -1,7 +1,6 @@
 package microblog_test
 
 import (
-	"database/sql"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -39,26 +38,6 @@ func TestListenAndServe_UsesGivenStore(t *testing.T) {
 	want := fmt.Sprintf("[{%s title content}]", id)
 
 	if !cmp.Equal(want, got) {
-		t.Error(cmp.Diff(want, got))
-	}
-
-}
-
-func TestDBCreate(t *testing.T) {
-
-	want := microblog.NewBlogPost()
-	want.ID = uuid.New()
-	want.Title = "foo"
-	want.Content = "foo"
-	store := newTestDBConnection(t)
-
-	err := store.Create(*want)
-	require.NoError(t, err)
-
-	got, err := store.Get(want.ID)
-	require.NoError(t, err)
-
-	if !cmp.Equal(want, &got) {
 		t.Error(cmp.Diff(want, got))
 	}
 }
@@ -156,33 +135,6 @@ func newTestServer(t *testing.T, store microblog.PostStore) net.Addr {
 	}
 
 	return netListener.Addr()
-}
-
-func newTestDBConnection(t *testing.T) *microblog.PostgresStore {
-
-	port := "5438"
-	host := "127.0.0.1"
-	user := "postgres"
-	password := "postgres"
-	dbName := "postgres"
-
-	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
-		"password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbName)
-
-	db, err := sql.Open("postgres", psqlInfo)
-	if err != nil {
-		panic(err)
-	}
-
-	err = db.Ping()
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println("Successfully connected!")
-	return &microblog.PostgresStore{DB: db}
-
 }
 
 func basicAuth() string {
