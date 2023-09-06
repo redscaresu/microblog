@@ -71,7 +71,7 @@ func TestSubmitHandler(t *testing.T) {
 	}
 }
 
-func TestSubmitHandlerError(t *testing.T) {
+func TestSubmitHandlerBasicAuthError(t *testing.T) {
 	t.Parallel()
 
 	store := &microblog.MemoryPostStore{}
@@ -82,9 +82,12 @@ func TestSubmitHandlerError(t *testing.T) {
 	require.NoError(t, err)
 
 	resp, err := http.DefaultClient.Do(req)
-	require.Error(t, err)
+	require.NoError(t, err)
 	defer resp.Body.Close()
 
+	if !cmp.Equal("401 Unauthorized", resp.Status) {
+		t.Error(cmp.Diff(http.StatusUnauthorized, resp.Status))
+	}
 }
 
 func TestIsAuthenticatedWhenCorrectPasswordProvidedReturnsTrue(t *testing.T) {
