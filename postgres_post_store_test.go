@@ -15,11 +15,11 @@ import (
 
 func TestDBCreate(t *testing.T) {
 
+	store := newTestDBConnection(t)
 	want := microblog.NewBlogPost()
 	want.ID = uuid.New()
-	want.Title = "foo"
-	want.Content = "foo"
-	store := newTestDBConnection(t)
+	want.Title = uuid.new().string()
+	want.Content = uuid.new().string()
 
 	err := store.Create(*want)
 	require.NoError(t, err)
@@ -33,7 +33,7 @@ func TestDBCreate(t *testing.T) {
 }
 
 func newTestDBConnection(t *testing.T) *microblog.PostgresStore {
-
+	t.Helper()
 	port := "5438"
 	host := "127.0.0.1"
 	user := "postgres"
