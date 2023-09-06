@@ -71,6 +71,22 @@ func TestSubmitHandler(t *testing.T) {
 	}
 }
 
+func TestSubmitHandlerError(t *testing.T) {
+	t.Parallel()
+
+	store := &microblog.MemoryPostStore{}
+	addr := newTestServer(t, store)
+
+	endpoint := fmt.Sprintf("http://%v/newpost", addr)
+	req, err := http.NewRequest("GET", endpoint, nil)
+	require.NoError(t, err)
+
+	resp, err := http.DefaultClient.Do(req)
+	require.Error(t, err)
+	defer resp.Body.Close()
+
+}
+
 func TestIsAuthenticatedWhenCorrectPasswordProvidedReturnsTrue(t *testing.T) {
 
 	t.Setenv(microblog.MicroblogToken, "password123")
