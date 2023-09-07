@@ -5,6 +5,7 @@ package microblog_test
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"microblog"
 	"os"
 	"testing"
@@ -70,14 +71,14 @@ func newTestDBConnection(t *testing.T) *microblog.PostgresStore {
 
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 
 	err = db.Ping()
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 
-	fmt.Println("Successfully connected!")
+	log.Print("Successfully connected!")
 	return &microblog.PostgresStore{DB: db}
 }
