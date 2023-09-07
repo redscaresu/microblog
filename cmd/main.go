@@ -12,7 +12,7 @@ func main() {
 
 	app := microblog.Application{}
 	// connect to DB
-	psStore := microblog.New()
+	psStore, _ := microblog.New()
 
 	app.Poststore = psStore
 

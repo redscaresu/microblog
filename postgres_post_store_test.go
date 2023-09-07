@@ -1,4 +1,4 @@
-//go:build integration
+// go:build integration
 
 package microblog_test
 
@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"fmt"
 	"microblog"
+	"os"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -13,13 +14,26 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestDBCreate(t *testing.T) {
+func TestNew(t *testing.T) {
+
+	os.Setenv("LOCAL", "local")
+	os.Setenv("HOST", "127.0.0.1")
+	os.Setenv("PORT", "5438")
+	os.Setenv("PASSWORD", "postgres")
+	os.Setenv("DB_NAME", "postgres")
+	os.Setenv("USER", "postgres")
+
+	_, err := microblog.New()
+	require.NoError(t, err)
+}
+
+func TestCreate(t *testing.T) {
 
 	store := newTestDBConnection(t)
 	want := microblog.NewBlogPost()
 	want.ID = uuid.New()
-	want.Title = uuid.new().string()
-	want.Content = uuid.new().string()
+	want.Title = uuid.NewString()
+	want.Content = uuid.NewString()
 
 	err := store.Create(*want)
 	require.NoError(t, err)
@@ -29,6 +43,16 @@ func TestDBCreate(t *testing.T) {
 
 	if !cmp.Equal(want, &got) {
 		t.Error(cmp.Diff(want, got))
+	}
+}
+
+func TestGetAll(t *testing.T) {
+	store := newTestDBConnection(t)
+	got, err := store.GetAll()
+	require.NoError(t, err)
+
+	if (len(got)) < 1 {
+		t.Error(1, got)
 	}
 }
 

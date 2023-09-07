@@ -3,6 +3,7 @@ package microblog
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/google/uuid"
@@ -13,7 +14,7 @@ type PostgresStore struct {
 	DB *sql.DB
 }
 
-func New() *PostgresStore {
+func New() (*PostgresStore, error) {
 
 	user := os.Getenv("DB_USER")
 	password := os.Getenv("DB_PASSWORD")
@@ -39,7 +40,7 @@ func New() *PostgresStore {
 
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	err = db.Ping()
@@ -47,9 +48,8 @@ func New() *PostgresStore {
 		panic(err)
 	}
 
-	fmt.Println("Successfully connected!")
-	return &PostgresStore{DB: db}
-
+	log.Print("Successfully connected!")
+	return &PostgresStore{DB: db}, nil
 }
 
 func (p *PostgresStore) GetAll() ([]BlogPost, error) {
