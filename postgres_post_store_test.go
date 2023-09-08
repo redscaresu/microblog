@@ -1,5 +1,3 @@
-//go:build integration
-
 package microblog_test
 
 import (
@@ -58,6 +56,91 @@ func TestGetAll(t *testing.T) {
 	}
 }
 
+func TestGetError(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("Error creating mock database: %v", err)
+	}
+	defer db.Close()
+
+	store := &microblog.PostgresStore{DB: db}
+
+	invalidID := uuid.New()
+
+	mock.ExpectQuery("SELECT \\* FROM blog WHERE blog_id = (.+)").
+		WithArgs(invalidID).
+		WillReturnError(sql.ErrNoRows) // Simulating a "no rows found" error
+
+	result, err := store.Get(invalidID)
+
+	if err != sql.ErrNoRows {
+		t.Errorf("Expected error: %v, got: %v", sql.ErrNoRows, err)
+	}
+
+	if result != (microblog.BlogPost{}) {
+		t.Errorf("Expected empty result, got: %v", result)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There were unfulfilled expectations: %s", err)
+	}
+}
+
+func TestCreateError(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("Error creating mock database: %v", err)
+	}
+	defer db.Close()
+
+	store := &microblog.PostgresStore{DB: db}
+
+	blogpost := microblog.BlogPost{
+		ID:      uuid.New(),
+		Title:   "Test Post",
+		Content: "Test Content",
+	}
+
+	mock.ExpectQuery("insert into blog values (.+)").WillReturnError(sql.ErrTxDone)
+
+	err = store.Create(blogpost)
+
+	if err != sql.ErrTxDone {
+		t.Errorf("Expected error: %v, got: %v", sql.ErrTxDone, err)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There were unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetAllError(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("Error creating mock database: %v", err)
+	}
+	defer db.Close()
+
+	store := &microblog.PostgresStore{DB: db}
+
+	mock.ExpectQuery("SELECT \\* FROM blog;").
+		WillReturnError(sql.ErrTxDone)
+
+	result, err := store.GetAll()
+
+	if err != sql.ErrTxDone {
+		t.Errorf("Expected error: %v, got: %v", sql.ErrTxDone, err)
+	}
+
+	if result != nil {
+		t.Errorf("Expected nil result, got: %v", result)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There were unfulfilled expectations: %s", err)
+	}
+}
+
 func newTestDBConnection(t *testing.T) *microblog.PostgresStore {
 	t.Helper()
 	port := "5438"
@@ -82,39 +165,4 @@ func newTestDBConnection(t *testing.T) *microblog.PostgresStore {
 
 	log.Print("Successfully connected!")
 	return &microblog.PostgresStore{DB: db}
-}
-
-func TestCreateErrorCase(t *testing.T) {
-	// Create a new instance of go-sqlmock and a database connection
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Fatalf("Error creating mock database: %v", err)
-	}
-	defer db.Close()
-
-	// Create a PostgresStore instance with the mock database connection
-	store := &microblog.PostgresStore{DB: db}
-
-	// Define the input data for your test
-	blogpost := microblog.BlogPost{
-		ID:      uuid.New(),
-		Title:   "Test Post",
-		Content: "Test Content",
-	}
-
-	// Expect the Query method to be called with an error
-	mock.ExpectQuery("insert into blog values (.+)").WillReturnError(sql.ErrTxDone)
-
-	// Call the Create method
-	err = store.Create(blogpost)
-
-	// Check if the error is as expected
-	if err != sql.ErrTxDone {
-		t.Errorf("Expected error: %v, got: %v", sql.ErrTxDone, err)
-	}
-
-	// Ensure that all expectations were met
-	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Errorf("There were unfulfilled expectations: %s", err)
-	}
 }
