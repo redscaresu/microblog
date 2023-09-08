@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
-	"io"
 	"log"
 	"net/http"
 
@@ -71,7 +70,9 @@ func (app *Application) basicAuth(next http.HandlerFunc) http.HandlerFunc {
 }
 
 func (app *Application) NewPostHandler(w http.ResponseWriter, r *http.Request) {
-	err := RenderHTMLTemplate(w)
+
+	blog := template.Must(template.New("main").ParseFS(templates, "templates/home.gohtml"))
+	err := blog.Execute(w, "foo")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -118,13 +119,4 @@ func (app *Application) Submit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Fprintf(w, "Post submitted successfully!")
-}
-
-func RenderHTMLTemplate(w io.Writer) error {
-	blog := template.Must(template.New("main").ParseFS(templates, "templates/home.gohtml"))
-	err := blog.Execute(w, "foo")
-	if err != nil {
-		return err
-	}
-	return nil
 }
