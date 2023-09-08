@@ -10,6 +10,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -81,4 +82,39 @@ func newTestDBConnection(t *testing.T) *microblog.PostgresStore {
 
 	log.Print("Successfully connected!")
 	return &microblog.PostgresStore{DB: db}
+}
+
+func TestCreateErrorCase(t *testing.T) {
+	// Create a new instance of go-sqlmock and a database connection
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("Error creating mock database: %v", err)
+	}
+	defer db.Close()
+
+	// Create a PostgresStore instance with the mock database connection
+	store := &microblog.PostgresStore{DB: db}
+
+	// Define the input data for your test
+	blogpost := microblog.BlogPost{
+		ID:      uuid.New(),
+		Title:   "Test Post",
+		Content: "Test Content",
+	}
+
+	// Expect the Query method to be called with an error
+	mock.ExpectQuery("insert into blog values (.+)").WillReturnError(sql.ErrTxDone)
+
+	// Call the Create method
+	err = store.Create(blogpost)
+
+	// Check if the error is as expected
+	if err != sql.ErrTxDone {
+		t.Errorf("Expected error: %v, got: %v", sql.ErrTxDone, err)
+	}
+
+	// Ensure that all expectations were met
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There were unfulfilled expectations: %s", err)
+	}
 }
