@@ -45,7 +45,7 @@ func New() (*PostgresStore, error) {
 
 	err = db.Ping()
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	log.Print("Successfully connected!")
@@ -58,14 +58,14 @@ func (p *PostgresStore) GetAll() ([]BlogPost, error) {
 
 	rows, err := p.DB.Query("SELECT * FROM blog;")
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	for rows.Next() {
 		bp := NewBlogPost()
 		err := rows.Scan(&bp.ID, &bp.Title, &bp.Content)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 		blogPosts = append(blogPosts, *bp)
 	}
@@ -77,7 +77,7 @@ func (p *PostgresStore) Create(blogpost BlogPost) error {
 
 	_, err := p.DB.Query("insert into blog values ($1,$2,$3);", blogpost.ID, blogpost.Title, blogpost.Content)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	return nil
 }
@@ -89,7 +89,7 @@ func (p *PostgresStore) Get(id uuid.UUID) (BlogPost, error) {
 	err := p.DB.QueryRow("SELECT * FROM blog WHERE blog_id = $1;", id).
 		Scan(&bp.ID, &bp.Title, &bp.Content)
 	if err != nil {
-		panic(err)
+		return BlogPost{}, err
 	}
 
 	return *bp, nil
