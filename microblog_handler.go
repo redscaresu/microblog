@@ -70,7 +70,6 @@ func (app *Application) basicAuth(next http.HandlerFunc) http.HandlerFunc {
 }
 
 func (app *Application) NewPostHandler(w http.ResponseWriter, r *http.Request) {
-
 	blog := template.Must(template.New("main").ParseFS(templates, "templates/home.gohtml"))
 	err := blog.Execute(w, "foo")
 	if err != nil {
