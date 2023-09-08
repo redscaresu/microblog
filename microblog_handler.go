@@ -124,7 +124,7 @@ func RenderHTMLTemplate(w io.Writer) error {
 	blog := template.Must(template.New("main").ParseFS(templates, "templates/home.gohtml"))
 	err := blog.Execute(w, "foo")
 	if err != nil {
-		log.Panic(err)
+		return err
 	}
 	return nil
 }
