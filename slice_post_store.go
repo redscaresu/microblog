@@ -16,6 +16,9 @@ func (s MemoryPostStore) Create(blogpost BlogPost) error {
 }
 
 func (s MemoryPostStore) Get(id uuid.UUID) (BlogPost, error) {
-
 	return *NewBlogPost(), nil
+}
+
+func (s MemoryPostStore) FetchLast5BlogPosts() ([]BlogPost, error) {
+	return s.BlogPosts, nil
 }

@@ -6,6 +6,7 @@ type PostStore interface {
 	Create(BlogPost) error
 	GetAll() ([]BlogPost, error)
 	Get(id uuid.UUID) (BlogPost, error)
+	FetchLast5BlogPosts() ([]BlogPost, error)
 }
 
 type BlogPost struct {

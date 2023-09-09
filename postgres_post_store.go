@@ -93,5 +93,25 @@ func (p *PostgresStore) Get(id uuid.UUID) (BlogPost, error) {
 	}
 
 	return *bp, nil
+}
 
+func (p *PostgresStore) FetchLast5BlogPosts() ([]BlogPost, error) {
+
+	blogPosts := []BlogPost{}
+
+	rows, err := p.DB.Query("SELECT * FROM blog LIMIT 5;")
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		bp := NewBlogPost()
+		err := rows.Scan(&bp.ID, &bp.Title, &bp.Content)
+		if err != nil {
+			return nil, err
+		}
+		blogPosts = append(blogPosts, *bp)
+	}
+
+	return blogPosts, nil
 }

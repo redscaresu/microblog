@@ -1,105 +1,80 @@
-{{define "main"}}
 <!DOCTYPE html>
 <html>
-  <head>
+<head>
     <title>My Technical Blog</title>
     <style>
-      body {
-        background-color: lightblue;
-        color: white;
-        font-family: Arial, sans-serif;
-        margin: 0;
-        padding: 20px;
-        box-sizing: border-box;
-      }
-
-      h1 {
-        text-align: center;
-        margin-top: 0;
-      }
-
-      .container {
-        display: flex;
-        justify-content: center;
-        align-items: flex-start;
-      }
-
-      form {
-        max-width: 400px;
-        width: 100%;
-      }
-
-      label {
-        display: block;
-        margin-bottom: 5px;
-      }
-
-      input[type="text"],
-      textarea {
-        width: 100%;
-        padding: 5px;
-        margin-bottom: 10px;
-      }
-
-      button[type="submit"] {
-        padding: 10px 20px;
-        background-color: #4CAF50;
-        border: none;
-        color: white;
-        cursor: pointer;
-        font-size: 16px;
-      }
-
-      button[type="submit"]:hover {
-        background-color: #45a049;
-      }
-    </style>
-  </head>
-  <body>
-    <h1>Welcome to My Technical Blog</h1>
-    
-    <div class="container">
-      <form id="post-form">
-        <label for="title">Title:</label>
-        <input type="text" id="title" name="title"><br>
-        
-        <label for="content">Content:</label><br>
-        <textarea id="content" name="content"></textarea><br>
-        
-        <button type="submit">Submit</button>
-      </form>
-    </div>
-    
-    <script>
-      const form = document.getElementById("post-form");
-      form.addEventListener("submit", async (event) => {
-        event.preventDefault();
-        
-        const title = document.getElementById("title").value;
-        const content = document.getElementById("content").value;
-        
-        const data = {
-          title: title,
-          content: content
-        };
-        
-        const response = await fetch("/submit", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(data)
-        });
-        
-        if (response.ok) {
-          alert(JSON.stringify(data));
-          form.reset();
-        } else {
-          alert("Failed to submit post");
+        body {
+            background-color: lightblue;
+            color: white;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
         }
-      });
+
+        h1 {
+            text-align: center;
+            margin-top: 0;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .blog-post {
+            max-width: 600px;
+            width: 100%;
+            background-color: #333;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+
+        .blog-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .blog-content {
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Welcome to My Technical Blog</h1>
+
+    <div class="container" id="blog-container">
+        <!-- Blog posts will be displayed here -->
+    </div>
+
+    <script>
+        // Function to fetch and display the last 5 blog posts
+        async function fetchBlogPosts() {
+            const response = await fetch("/api/getLast5BlogPosts"); // Replace with your API endpoint
+            if (response.ok) {
+                const data = await response.json();
+                const blogContainer = document.getElementById("blog-container");
+
+                // Loop through the blog posts and create HTML elements for each post
+                data.forEach((post) => {
+                    const postElement = document.createElement("div");
+                    postElement.className = "blog-post";
+                    postElement.innerHTML = `
+                        <div class="blog-title">${post.title}</div>
+                        <div class="blog-content">${post.content}</div>
+                    `;
+                    blogContainer.appendChild(postElement);
+                });
+            } else {
+                console.error("Failed to fetch blog posts");
+            }
+        }
+
+        // Call the function to fetch and display blog posts when the page loads
+        fetchBlogPosts();
     </script>
-    
-  </body>
+</body>
 </html>
-{{ end }}

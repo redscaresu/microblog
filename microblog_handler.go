@@ -38,7 +38,7 @@ func ListenAndServe(addr string, app Application) error {
 
 	customMux := http.NewServeMux()
 
-	customMux.HandleFunc("/", app.readAllHandler)
+	customMux.HandleFunc("/", app.Last5BlogPostsHandler)
 	customMux.HandleFunc("/submit", app.basicAuth(app.Submit))
 	customMux.HandleFunc("/newpost", app.basicAuth(app.NewPostHandler))
 
@@ -70,13 +70,36 @@ func (app *Application) basicAuth(next http.HandlerFunc) http.HandlerFunc {
 }
 
 func (app *Application) NewPostHandler(w http.ResponseWriter, r *http.Request) {
-	blog := template.Must(template.New("main").ParseFS(templates, "templates/home.gohtml"))
+	blog := template.Must(template.New("main").ParseFS(templates, "templates/newpost.gohtml"))
 	err := blog.Execute(w, "foo")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	fmt.Fprint(w)
+}
+
+func (app *Application) Last5BlogPostsHandler(w http.ResponseWriter, r *http.Request) {
+	// Assuming you have a "last5blogposts.gohtml" template file in your templates directory
+	tpl, err := template.ParseFS(templates, "templates/home.gohtml")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Replace the following with your logic to fetch the last 5 blog posts from your data source
+	last5Posts, err := app.Poststore.FetchLast5BlogPosts()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Execute the template with the blog post data
+	err = tpl.Execute(w, last5Posts)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (app *Application) readAllHandler(w http.ResponseWriter, r *http.Request) {
