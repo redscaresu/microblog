@@ -102,7 +102,7 @@ func (app *Application) Last5BlogPostsHandler(w http.ResponseWriter, r *http.Req
 	}
 }
 
-func (app *Application) readAllHandler(w http.ResponseWriter, r *http.Request) {
+func (app *Application) ReadAllHandler(w http.ResponseWriter, r *http.Request) {
 	posts, err := app.Poststore.GetAll()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
