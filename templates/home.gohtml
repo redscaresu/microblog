@@ -53,7 +53,7 @@
     <script>
         // Function to fetch and display the last 5 blog posts
         async function fetchBlogPosts() {
-            const response = await fetch("/getlast5blogposts"); // Replace with your API endpoint
+            const response = await fetch("/getlast5blogposts");
             if (response.ok) {
                 const data = await response.json();
                 const blogContainer = document.getElementById("blog-container");
