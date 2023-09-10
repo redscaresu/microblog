@@ -81,14 +81,12 @@ func (app *Application) NewPostHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
-	// Assuming you have a "last5blogposts.gohtml" template file in your templates directory
 	tpl, err := template.ParseFS(templates, "templates/home.gohtml")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// Execute the template with the blog post data
 	err = tpl.Execute(w, "foo")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -104,7 +102,14 @@ func (app *Application) GetLast5BlogPosts(w http.ResponseWriter, r *http.Request
 		fmt.Fprint(w, err)
 		return
 	}
-	fmt.Fprint(w, last5Posts)
+	resp, err := json.Marshal(last5Posts)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		fmt.Fprint(w, err)
+		return
+	}
+
+	fmt.Fprint(w, string(resp))
 
 }
 
