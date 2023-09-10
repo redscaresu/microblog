@@ -39,7 +39,7 @@ func ListenAndServe(addr string, app Application) error {
 	customMux := http.NewServeMux()
 
 	customMux.HandleFunc("/", app.Home)
-	customMux.HandleFunc("/getlast5blogposts", app.basicAuth(app.NewPostHandler))
+	customMux.HandleFunc("/getlast5blogposts", app.GetLast5BlogPosts)
 	customMux.HandleFunc("/submit", app.basicAuth(app.Submit))
 	customMux.HandleFunc("/newpost", app.basicAuth(app.NewPostHandler))
 
