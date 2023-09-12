@@ -51,30 +51,33 @@
     </div>
 
     <script>
-        // Function to fetch and display the last 5 blog posts
-        async function fetchBlogPosts() {
-            const response = await fetch("/getlast5blogposts");
-            if (response.ok) {
-                const data = await response.json();
-                const blogContainer = document.getElementById("blog-container");
+        document.addEventListener("DOMContentLoaded", () => {
+            async function fetchBlogPosts() {
+                try {
+                    const response = await fetch("/getlast5blogposts");
+                    if (response.ok) {
+                        const data = await response.json();
+                        const blogContainer = document.getElementById("blog-container");
 
-                // Loop through the blog posts and create HTML elements for each post
-                data.forEach((post) => {
-                    const postElement = document.createElement("div");
-                    postElement.className = "blog-post";
-                    postElement.innerHTML = `
-                        <div class="blog-title">${post.title}</div>
-                        <div class="blog-content">${post.content}</div>
-                    `;
-                    blogContainer.appendChild(postElement);
-                });
-            } else {
-                console.error("Failed to fetch blog posts");
+                        data.forEach((post) => {
+                            const postElement = document.createElement("div");
+                            postElement.className = "blog-post";
+                            postElement.innerHTML = `
+                                <div class="blog-title">${post.Title}</div>
+                                <div class="blog-content">${post.Content}</div>
+                            `;
+                            blogContainer.appendChild(postElement);
+                        });
+                    } else {
+                        console.error("Failed to fetch blog posts");
+                    }
+                } catch (error) {
+                    console.error("An error occurred:", error);
+                }
             }
-        }
 
-        // Call the function to fetch and display blog posts when the page loads
-        fetchBlogPosts();
+            fetchBlogPosts();
+        });
     </script>
 </body>
 </html>
