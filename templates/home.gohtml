@@ -41,6 +41,16 @@
         .blog-content {
             font-size: 16px;
         }
+
+        .read-more {
+            cursor: pointer;
+            color: #00f;
+            text-decoration: underline;
+        }
+
+        .full-content {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -64,7 +74,11 @@
                             postElement.className = "blog-post";
                             postElement.innerHTML = `
                                 <div class="blog-title">${post.Title}</div>
-                                <div class="blog-content">${post.Content}</div>
+                                <div class="blog-content">
+                                    <div class="preview-content">${post.Content.substring(0, 10)}</div>
+                                    <div class="full-content">${post.Content}</div>
+                                    <span class="read-more" onclick="toggleContent(this)">Read More</span>
+                                </div>
                             `;
                             blogContainer.appendChild(postElement);
                         });
@@ -77,6 +91,22 @@
             }
 
             fetchBlogPosts();
+
+            function toggleContent(element) {
+                const contentContainer = element.parentElement;
+                const previewContent = contentContainer.querySelector(".preview-content");
+                const fullContent = contentContainer.querySelector(".full-content");
+
+                if (fullContent.style.display === "none" || fullContent.style.display === "") {
+                    previewContent.style.display = "none";
+                    fullContent.style.display = "block";
+                    element.textContent = "Read Less";
+                } else {
+                    previewContent.style.display = "block";
+                    fullContent.style.display = "none";
+                    element.textContent = "Read More";
+                }
+            }
         });
     </script>
 </body>
