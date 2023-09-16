@@ -77,7 +77,7 @@
                                 <div class="blog-content">
                                     <div class="preview-content">${post.Content.substring(0, 10)}</div>
                                     <div class="full-content">${post.Content}</div>
-                                    <span class="read-more" onclick="toggleContent(this)">Read More</span>
+                                    <span class="read-more" onclick="showFullContent('${post.Title}')">Read More</span>
                                 </div>
                             `;
                             blogContainer.appendChild(postElement);
@@ -90,23 +90,12 @@
                 }
             }
 
-            fetchBlogPosts();
-
-            function toggleContent(element) {
-                const contentContainer = element.parentElement;
-                const previewContent = contentContainer.querySelector(".preview-content");
-                const fullContent = contentContainer.querySelector(".full-content");
-
-                if (fullContent.style.display === "none" || fullContent.style.display === "") {
-                    previewContent.style.display = "none";
-                    fullContent.style.display = "block";
-                    element.textContent = "Read Less";
-                } else {
-                    previewContent.style.display = "block";
-                    fullContent.style.display = "none";
-                    element.textContent = "Read More";
-                }
+            function showFullContent(title) {
+                // Redirect to the individual blog post page with the post title as a query parameter
+                window.location.href = `/blog.html?title=${encodeURIComponent(title)}`;
             }
+
+            fetchBlogPosts();
         });
     </script>
 </body>

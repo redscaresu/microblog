@@ -82,11 +82,24 @@ func (p *PostgresStore) Create(blogpost BlogPost) error {
 	return nil
 }
 
-func (p *PostgresStore) Get(id uuid.UUID) (BlogPost, error) {
+func (p *PostgresStore) GetByID(id uuid.UUID) (BlogPost, error) {
 
 	bp := NewBlogPost()
 
 	err := p.DB.QueryRow("SELECT * FROM blog WHERE blog_id = $1;", id).
+		Scan(&bp.ID, &bp.Title, &bp.Content)
+	if err != nil {
+		return BlogPost{}, err
+	}
+
+	return *bp, nil
+}
+
+func (p *PostgresStore) GetByName(name string) (BlogPost, error) {
+
+	bp := NewBlogPost()
+
+	err := p.DB.QueryRow("SELECT * FROM blog WHERE blog_title = $1;", name).
 		Scan(&bp.ID, &bp.Title, &bp.Content)
 	if err != nil {
 		return BlogPost{}, err

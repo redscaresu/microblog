@@ -38,7 +38,7 @@ func TestCreate(t *testing.T) {
 	err := store.Create(*want)
 	require.NoError(t, err)
 
-	got, err := store.Get(want.ID)
+	got, err := store.GetByID(want.ID)
 	require.NoError(t, err)
 
 	if !cmp.Equal(want, &got) {
@@ -71,7 +71,7 @@ func TestGetError(t *testing.T) {
 		WithArgs(invalidID).
 		WillReturnError(sql.ErrNoRows) // Simulating a "no rows found" error
 
-	result, err := store.Get(invalidID)
+	result, err := store.GetByID(invalidID)
 
 	if err != sql.ErrNoRows {
 		t.Errorf("Expected error: %v, got: %v", sql.ErrNoRows, err)

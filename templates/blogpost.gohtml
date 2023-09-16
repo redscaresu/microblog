@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Individual Blog Post</title>
+    <style>
+        body {
+            background-color: lightblue;
+            color: white;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .blog-post {
+            background-color: #333;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+
+        .blog-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .blog-content {
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Blog Post</h1>
+
+    <div class="container">
+        <div class="blog-post" id="blog-post-container">
+            <!-- Blog post content will be displayed here -->
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // Retrieve the query parameter 'title' from the URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const postTitle = urlParams.get("title");
+
+            // Fetch the full content of the individual blog post based on the title
+            async function fetchIndividualBlogPost() {
+                try {
+                    const response = await fetch(`/getblogpost?title=${encodeURIComponent(postTitle)}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        const blogPostContainer = document.getElementById("blog-post-container");
+
+                        // Display the full content of the individual blog post
+                        const postElement = document.createElement("div");
+                        postElement.className = "blog-post";
+                        postElement.innerHTML = `
+                            <div class="blog-title">${data.Title}</div>
+                            <div class="blog-content">${data.Content}</div>
+                        `;
+                        blogPostContainer.appendChild(postElement);
+                    } else {
+                        console.error("Failed to fetch the individual blog post");
+                    }
+                } catch (error) {
+                    console.error("An error occurred:", error);
+                }
+            }
+
+            fetchIndividualBlogPost();
+        });
+    </script>
+</body>
+</html>

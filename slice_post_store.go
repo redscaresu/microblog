@@ -15,7 +15,11 @@ func (s MemoryPostStore) Create(blogpost BlogPost) error {
 	return nil
 }
 
-func (s MemoryPostStore) Get(id uuid.UUID) (BlogPost, error) {
+func (s MemoryPostStore) GetByID(id uuid.UUID) (BlogPost, error) {
+	return *NewBlogPost(), nil
+}
+
+func (s MemoryPostStore) GetByName(name string) (BlogPost, error) {
 	return *NewBlogPost(), nil
 }
 

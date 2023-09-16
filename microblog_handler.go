@@ -38,7 +38,7 @@ func ListenAndServe(addr string, app Application) error {
 
 	customMux := http.NewServeMux()
 	customMux.HandleFunc("/", app.Home)
-	customMux.HandleFunc("/blogpost", app.GetBlogPost)
+	customMux.HandleFunc("/blogpost", app.GetBlogPostByName)
 	customMux.HandleFunc("/getlast5blogposts", app.GetLast5BlogPosts)
 	customMux.HandleFunc("/submit", app.basicAuth(app.Submit))
 	customMux.HandleFunc("/newpost", app.basicAuth(app.NewPostHandler))
@@ -112,17 +112,39 @@ func (app *Application) GetLast5BlogPosts(w http.ResponseWriter, r *http.Request
 	fmt.Fprint(w, string(resp))
 }
 
-func (app *Application) GetBlogPost(w http.ResponseWriter, r *http.Request) {
+func (app *Application) GetBlogPostByID(w http.ResponseWriter, r *http.Request) {
 
 	queryParams := r.URL.Query()
 	id := queryParams.Get("id")
 
-	blog, err := app.Poststore.Get(uuid.MustParse(id))
+	blog, err := app.Poststore.GetByID(uuid.MustParse(id))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		fmt.Fprint(w, err)
 		return
 	}
+	resp, err := json.Marshal(blog)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		fmt.Fprint(w, err)
+		return
+	}
+
+	fmt.Fprint(w, string(resp))
+}
+
+func (app *Application) GetBlogPostByName(w http.ResponseWriter, r *http.Request) {
+
+	queryParams := r.URL.Query()
+	name := queryParams.Get("name")
+
+	blog, err := app.Poststore.GetByName(name)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		fmt.Fprint(w, err)
+		return
+	}
+
 	resp, err := json.Marshal(blog)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

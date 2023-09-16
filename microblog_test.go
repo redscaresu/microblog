@@ -63,7 +63,7 @@ func TestSubmitHandler(t *testing.T) {
 	err = json.NewDecoder(resp.Body).Decode(want)
 	require.NoError(t, err)
 
-	got, err := store.Get(want.ID)
+	got, err := store.GetByID(want.ID)
 	require.NoError(t, err)
 
 	if cmp.Equal(want, got) {

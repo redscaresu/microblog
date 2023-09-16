@@ -5,7 +5,8 @@ import "github.com/google/uuid"
 type PostStore interface {
 	Create(BlogPost) error
 	GetAll() ([]BlogPost, error)
-	Get(id uuid.UUID) (BlogPost, error)
+	GetByID(id uuid.UUID) (BlogPost, error)
+	GetByName(name string) (BlogPost, error)
 	FetchLast5BlogPosts() ([]BlogPost, error)
 }
 
