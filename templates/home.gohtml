@@ -63,8 +63,7 @@
     <script>
 
         function showFullContent(title) {
-            // Example: window.location.href = `/blog.html?title=${encodeURIComponent(title)}`;
-            window.location.href = `/blog.html?title=${encodeURIComponent(title)}`;
+            window.location.href = `/blogpost?name=${encodeURIComponent(title)}`;
             console.log(`Clicked on "${title}"`);
         }
 

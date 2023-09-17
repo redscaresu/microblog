@@ -58,7 +58,7 @@
             // Fetch the full content of the individual blog post based on the title
             async function fetchIndividualBlogPost() {
                 try {
-                    const response = await fetch(`/getblogpost?title=${encodeURIComponent(postTitle)}`);
+                    const response = await fetch(`/blogpost?name=${encodeURIComponent(postTitle)}`);
                     if (response.ok) {
                         const data = await response.json();
                         const blogPostContainer = document.getElementById("blog-post-container");

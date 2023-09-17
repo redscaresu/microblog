@@ -38,7 +38,8 @@ func ListenAndServe(addr string, app Application) error {
 
 	customMux := http.NewServeMux()
 	customMux.HandleFunc("/", app.Home)
-	customMux.HandleFunc("/blogpost", app.GetBlogPostByName)
+	customMux.HandleFunc("/blogpost", app.BlogPost)
+	customMux.HandleFunc("/getblogpostbyname", app.GetBlogPostByName)
 	customMux.HandleFunc("/getlast5blogposts", app.GetLast5BlogPosts)
 	customMux.HandleFunc("/submit", app.basicAuth(app.Submit))
 	customMux.HandleFunc("/newpost", app.basicAuth(app.NewPostHandler))
@@ -110,6 +111,20 @@ func (app *Application) GetLast5BlogPosts(w http.ResponseWriter, r *http.Request
 	}
 
 	fmt.Fprint(w, string(resp))
+}
+
+func (app *Application) BlogPost(w http.ResponseWriter, r *http.Request) {
+	tpl, err := template.ParseFS(templates, "templates/blogpost.gohtml")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = tpl.Execute(w, "foo")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (app *Application) GetBlogPostByID(w http.ResponseWriter, r *http.Request) {
