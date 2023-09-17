@@ -51,14 +51,14 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", () => {
-            // Retrieve the query parameter 'title' from the URL
+            // Retrieve the query parameter 'name' from the URL
             const urlParams = new URLSearchParams(window.location.search);
-            const postTitle = urlParams.get("title");
+            const postTitle = urlParams.get("name");
 
             // Fetch the full content of the individual blog post based on the title
             async function fetchIndividualBlogPost() {
                 try {
-                    const response = await fetch(`/blogpost?name=${encodeURIComponent(postTitle)}`);
+                    const response = await fetch(`/getblogpostbyname?name=${encodeURIComponent(postTitle)}`);
                     if (response.ok) {
                         const data = await response.json();
                         const blogPostContainer = document.getElementById("blog-post-container");
