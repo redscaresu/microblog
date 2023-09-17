@@ -61,6 +61,13 @@
     </div>
 
     <script>
+
+        function showFullContent(title) {
+            // Example: window.location.href = `/blog.html?title=${encodeURIComponent(title)}`;
+            window.location.href = `/blog.html?title=${encodeURIComponent(title)}`;
+            console.log(`Clicked on "${title}"`);
+        }
+
         document.addEventListener("DOMContentLoaded", () => {
             async function fetchBlogPosts() {
                 try {
@@ -89,12 +96,6 @@
                     console.error("An error occurred:", error);
                 }
             }
-
-            function showFullContent(title) {
-                // Redirect to the individual blog post page with the post title as a query parameter
-                window.location.href = `/blog.html?title=${encodeURIComponent(title)}`;
-            }
-
             fetchBlogPosts();
         });
     </script>
