@@ -2,90 +2,15 @@
 <html>
 <head>
     <title>ashouri.tech</title>
-    <style>
-        body {
-            background-color: white;
-            color: white;
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0; /* Reset padding to zero */
-        }
-
-        h1 {
-            text-align: center;
-            margin: 0; /* Remove top and bottom margin */
-            padding-top: 40px; /* Add padding-top for spacing */
-            color: #333;
-            border-bottom: 1px solid #ccc;
-            padding-bottom: 40px;
-            background-color: #f5f5f5;
-        }
-
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        .blog-post {
-            background-color: white;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .blog-title {
-            font-size: 30px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #555;
-        }
-
-        .blog-content {
-            font-size: 16px;
-            color: #000000;
-        }
-    </style>
 </head>
 <body>
-    <h1>ashouri.tech</h1>
+    <h1>{{.Title}}</h1>
 
     <div class="container">
         <div class="blog-post" id="blog-post-container">
             <!-- Blog post content will be displayed here -->
+            {{.Content}}
         </div>
     </div>
-
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            // Retrieve the query parameter 'name' from the URL
-            const urlParams = new URLSearchParams(window.location.search);
-            const postTitle = urlParams.get("name");
-
-            // Fetch the full content of the individual blog post based on the title
-            async function fetchIndividualBlogPost() {
-                try {
-                    const response = await fetch(`/getblogpostbyname?name=${encodeURIComponent(postTitle)}`);
-                    if (response.ok) {
-                        const data = await response.json();
-                        const blogPostContainer = document.getElementById("blog-post-container");
-
-                        // Display the full content of the individual blog post
-                        const postElement = document.createElement("div");
-                        postElement.className = "blog-post";
-                        postElement.innerHTML = `
-                            <div class="blog-title">${data.Title}</div>
-                            <div class="blog-content">${data.Content}</div>
-                        `;
-                        blogPostContainer.appendChild(postElement);
-                    } else {
-                        console.error("Failed to fetch the individual blog post");
-                    }
-                } catch (error) {
-                    console.error("An error occurred:", error);
-                }
-            }
-
-            fetchIndividualBlogPost();
-        });
-    </script>
 </body>
 </html>

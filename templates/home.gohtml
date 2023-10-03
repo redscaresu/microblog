@@ -73,43 +73,9 @@
         <!-- Blog posts will be displayed here -->
     </div>
 
-    <script>
+    {{ range .}}
+        <a href="/blogpost?name={{.Title}}">{{.Title}}</a>
+    {{ end }}
 
-        function showFullContent(title) {
-            window.location.href = `/blogpost?name=${encodeURIComponent(title)}`;
-            console.log(`Clicked on "${title}"`);
-        }
-
-        document.addEventListener("DOMContentLoaded", () => {
-            async function fetchBlogPosts() {
-                try {
-                    const response = await fetch("/getlast5blogposts");
-                    if (response.ok) {
-                        const data = await response.json();
-                        const blogContainer = document.getElementById("blog-container");
-
-                        data.forEach((post) => {
-                            const postElement = document.createElement("div");
-                            postElement.className = "blog-post";
-                            postElement.innerHTML = `
-                                <div class="blog-title">${post.Title}</div>
-                                <div class="blog-content">
-                                    <div class="preview-content">${post.Content.substring(0, 10)}</div>
-                                    <div class="full-content">${post.Content}</div>
-                                    <span class="read-more" onclick="showFullContent('${post.Title}')">Read More</span>
-                                </div>
-                            `;
-                            blogContainer.appendChild(postElement);
-                        });
-                    } else {
-                        console.error("Failed to fetch blog posts");
-                    }
-                } catch (error) {
-                    console.error("An error occurred:", error);
-                }
-            }
-            fetchBlogPosts();
-        });
-    </script>
 </body>
 </html>

@@ -6,9 +6,9 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"log"
 	"net/http"
+	"text/template"
 
 	"github.com/google/uuid"
 )
@@ -38,10 +38,10 @@ func ListenAndServe(addr string, app Application) error {
 
 	customMux := http.NewServeMux()
 	customMux.HandleFunc("/", app.Home)
-	customMux.HandleFunc("/blogpost", app.BlogPost)
-	customMux.HandleFunc("/getblogpostbyname", app.GetBlogPostByName)
+	customMux.HandleFunc("/blogpost", app.GetBlogPostByName)
 	customMux.HandleFunc("/getlast5blogposts", app.GetLast5BlogPosts)
 	customMux.HandleFunc("/submit", app.basicAuth(app.Submit))
+	customMux.HandleFunc("/editpost", app.basicAuth(app.EditPostHandler))
 	customMux.HandleFunc("/newpost", app.basicAuth(app.NewPostHandler))
 
 	err := http.ListenAndServe(addr, customMux)
@@ -72,13 +72,31 @@ func (app *Application) basicAuth(next http.HandlerFunc) http.HandlerFunc {
 }
 
 func (app *Application) NewPostHandler(w http.ResponseWriter, r *http.Request) {
-	blog := template.Must(template.New("main").ParseFS(templates, "templates/newpost.gohtml"))
-	err := blog.Execute(w, "foo")
+	http.ServeFile(w, r, "templates/newpost.gohtml")
+}
+
+func (app *Application) EditPostHandler(w http.ResponseWriter, r *http.Request) {
+	queryParams := r.URL.Query()
+	name := queryParams.Get("name")
+
+	blog, err := app.Poststore.GetByName(name)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		fmt.Fprint(w, err)
+		return
+	}
+
+	tpl, err := template.ParseFS(templates, "templates/editpost.gohtml")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	fmt.Fprint(w)
+
+	err = tpl.Execute(w, blog)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
@@ -88,7 +106,13 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = tpl.Execute(w, "foo")
+	blogPost, err := app.Poststore.FetchLast5BlogPosts()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = tpl.Execute(w, blogPost)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -111,20 +135,6 @@ func (app *Application) GetLast5BlogPosts(w http.ResponseWriter, r *http.Request
 	}
 
 	fmt.Fprint(w, string(resp))
-}
-
-func (app *Application) BlogPost(w http.ResponseWriter, r *http.Request) {
-	tpl, err := template.ParseFS(templates, "templates/blogpost.gohtml")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	err = tpl.Execute(w, "foo")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
 }
 
 func (app *Application) GetBlogPostByID(w http.ResponseWriter, r *http.Request) {
@@ -160,14 +170,17 @@ func (app *Application) GetBlogPostByName(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	resp, err := json.Marshal(blog)
+	tpl, err := template.ParseFS(templates, "templates/blogpost.gohtml")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		fmt.Fprint(w, err)
 		return
 	}
 
-	fmt.Fprint(w, string(resp))
+	err = tpl.Execute(w, blog)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (app *Application) ReadAllHandler(w http.ResponseWriter, r *http.Request) {

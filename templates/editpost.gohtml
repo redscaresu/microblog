@@ -10,10 +10,12 @@
     <div class="container">
       <form id="post-form">
         <label for="title">Title:</label>
-        <input type="text" id="title" name="title"><br>
+        <input type="text" id="title" name="title" value="{{.Title}}"><br>
         
         <label for="content">Content:</label><br>
-        <textarea id="content" name="content"></textarea><br>
+        <textarea id="content" name="content">
+          {{.Content}}
+        </textarea><br>
         
         <button type="submit">Submit</button>
       </form>

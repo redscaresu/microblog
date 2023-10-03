@@ -75,10 +75,13 @@ func (p *PostgresStore) GetAll() ([]BlogPost, error) {
 
 func (p *PostgresStore) Create(blogpost BlogPost) error {
 
-	_, err := p.DB.Query("insert into blog values ($1,$2,$3);", blogpost.ID, blogpost.Title, blogpost.Content)
+	fmt.Println(blogpost.Content)
+	rows, err := p.DB.Query("insert into blog values ($1,$2,$3);", blogpost.ID, blogpost.Title, blogpost.Content)
 	if err != nil {
 		return err
 	}
+
+	fmt.Println(rows, err)
 	return nil
 }
 
