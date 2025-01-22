@@ -1,68 +1,37 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ashouri.tech</title>
     <style>
         body {
-            background-color: white;
-            color: white;
             font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
+        }
+
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .blog-post {
+            border-bottom: 1px solid #ddd;
+            padding: 10px 0;
+        }
+
+        .blog-post:last-child {
+            border-bottom: none;
         }
 
         h1 {
             text-align: center;
-            margin: 0; /* Remove top and bottom margin */
-            padding-top: 40px; /* Add padding-top for spacing */
-            color: #333;
-            border-bottom: 1px solid #ccc;
-            padding-bottom: 40px;
-            background-color: #f5f5f5;
-        }
-
-        .container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .blog-post {
-            max-width: 600px;
-            width: 100%;
-            background-color: white;
-            padding: 20px;
-            margin-bottom: 20px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
-
-        .blog-title {
-            font-size: 30px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #555;
-        }
-
-        .blog-content {
-            font-size: 16px;
-            color: #000000;
-
-        }
-
-        .read-more {
-            cursor: pointer;
-            color: #00f;
-            text-decoration: underline;
-        }
-
-        .full-content {
-            display: none;
-        }
-
-        .blog-post:first-child {
-            margin-top: 40px;
+            margin-top: 20px;
         }
     </style>
 </head>
@@ -71,11 +40,11 @@
 
     <div class="container" id="blog-container">
         <!-- Blog posts will be displayed here -->
+        {{ range .}}
+            <div class="blog-post">
+                <a href="/blogpost?name={{.Title}}">{{.Title}}</a>
+            </div>
+        {{ end }}
     </div>
-
-    {{ range .}}
-        <a href="/blogpost?name={{.Title}}">{{.Title}}</a>
-    {{ end }}
-
 </body>
 </html>
