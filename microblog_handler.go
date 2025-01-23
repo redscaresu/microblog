@@ -167,6 +167,7 @@ func (app *Application) GetBlogPostByName(w http.ResponseWriter, r *http.Request
 
 	queryParams := r.URL.Query()
 	name := queryParams.Get("name")
+	fmt.Println(name)
 
 	blog, err := app.Poststore.GetByName(name)
 	if err != nil {
