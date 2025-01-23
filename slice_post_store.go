@@ -23,6 +23,14 @@ func (s MemoryPostStore) GetByName(name string) (BlogPost, error) {
 	return *NewBlogPost(), nil
 }
 
-func (s MemoryPostStore) FetchLast5BlogPosts() ([]BlogPost, error) {
+func (s MemoryPostStore) FetchLast10BlogPosts() ([]BlogPost, error) {
 	return s.BlogPosts, nil
+}
+
+func (s MemoryPostStore) Delete(id uuid.UUID) error {
+	return nil
+}
+
+func (s MemoryPostStore) Update(blogpost BlogPost) error {
+	return nil
 }

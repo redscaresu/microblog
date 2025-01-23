@@ -85,6 +85,26 @@ func (p *PostgresStore) Create(blogpost BlogPost) error {
 	return nil
 }
 
+func (p *PostgresStore) Delete(id uuid.UUID) error {
+
+	rows, err := p.DB.Query("DELETE FROM blog WHERE blog_id = $1;", id)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(rows, err)
+	return nil
+}
+
+func (p *PostgresStore) Update(blogpost BlogPost) error {
+	rows, err := p.DB.Query("UPDATE blog SET blog_title = $1, blog_post = $2 WHERE blog_id = $3;", blogpost.Title, blogpost.Content, blogpost.ID)
+	if err != nil {
+		return err
+	}
+	fmt.Println(rows, err)
+	return nil
+}
+
 func (p *PostgresStore) GetByID(id uuid.UUID) (BlogPost, error) {
 
 	bp := NewBlogPost()
@@ -102,6 +122,10 @@ func (p *PostgresStore) GetByName(name string) (BlogPost, error) {
 
 	bp := NewBlogPost()
 
+	if name == "" {
+		return BlogPost{}, fmt.Errorf("name is empty")
+	}
+
 	err := p.DB.QueryRow("SELECT * FROM blog WHERE blog_title = $1;", name).
 		Scan(&bp.ID, &bp.Title, &bp.Content)
 	if err != nil {
@@ -111,11 +135,11 @@ func (p *PostgresStore) GetByName(name string) (BlogPost, error) {
 	return *bp, nil
 }
 
-func (p *PostgresStore) FetchLast5BlogPosts() ([]BlogPost, error) {
+func (p *PostgresStore) FetchLast10BlogPosts() ([]BlogPost, error) {
 
 	blogPosts := []BlogPost{}
 
-	rows, err := p.DB.Query("SELECT * FROM blog LIMIT 5;")
+	rows, err := p.DB.Query("SELECT * FROM blog LIMIT 10;")
 	if err != nil {
 		return nil, err
 	}

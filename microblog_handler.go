@@ -39,10 +39,11 @@ func ListenAndServe(addr string, app Application) error {
 	customMux := http.NewServeMux()
 	customMux.HandleFunc("/", app.Home)
 	customMux.HandleFunc("/blogpost", app.GetBlogPostByName)
-	customMux.HandleFunc("/getlast5blogposts", app.GetLast5BlogPosts)
+	customMux.HandleFunc("/getlast5blogposts", app.GetLast10BlogPosts)
 	customMux.HandleFunc("/submit", app.basicAuth(app.Submit))
 	customMux.HandleFunc("/editpost", app.basicAuth(app.EditPostHandler))
 	customMux.HandleFunc("/newpost", app.basicAuth(app.NewPostHandler))
+	customMux.HandleFunc("/updatepost", app.basicAuth(app.UpdatePostHandler))
 
 	err := http.ListenAndServe(addr, customMux)
 	return err
@@ -78,6 +79,10 @@ func (app *Application) NewPostHandler(w http.ResponseWriter, r *http.Request) {
 func (app *Application) EditPostHandler(w http.ResponseWriter, r *http.Request) {
 	queryParams := r.URL.Query()
 	name := queryParams.Get("name")
+	if name == "" {
+		http.Error(w, "name is empty", http.StatusBadRequest)
+		return
+	}
 
 	blog, err := app.Poststore.GetByName(name)
 	if err != nil {
@@ -106,7 +111,7 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	blogPost, err := app.Poststore.FetchLast5BlogPosts()
+	blogPost, err := app.Poststore.FetchLast10BlogPosts()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -119,9 +124,9 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (app *Application) GetLast5BlogPosts(w http.ResponseWriter, r *http.Request) {
+func (app *Application) GetLast10BlogPosts(w http.ResponseWriter, r *http.Request) {
 
-	last5Posts, err := app.Poststore.FetchLast5BlogPosts()
+	last5Posts, err := app.Poststore.FetchLast10BlogPosts()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		fmt.Fprint(w, err)
@@ -222,4 +227,43 @@ func (app *Application) Submit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Fprintf(w, "Post submitted successfully!")
+}
+
+func (app *Application) UpdatePostHandler(w http.ResponseWriter, r *http.Request) {
+	// Parse the form data
+	err := r.ParseForm()
+	if err != nil {
+		http.Error(w, "Unable to parse form", http.StatusBadRequest)
+		return
+	}
+
+	// Retrieve form values
+	id := r.FormValue("id")
+	title := r.FormValue("title")
+	content := r.FormValue("content")
+
+	// Debug prints
+	fmt.Printf("ID: %s, Title: %s, Content: %s\n", id, title, content)
+
+	idUUID, err := uuid.Parse(id)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	newBlogPost := &BlogPost{
+		ID:      idUUID,
+		Title:   title,
+		Content: content,
+	}
+
+	err = app.Poststore.Update(*newBlogPost)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, fmt.Sprintf("/editpost?name=%s", title), http.StatusSeeOther)
+
+	fmt.Fprintf(w, "Post updated successfully!")
 }

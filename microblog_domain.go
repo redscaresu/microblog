@@ -7,7 +7,9 @@ type PostStore interface {
 	GetAll() ([]BlogPost, error)
 	GetByID(id uuid.UUID) (BlogPost, error)
 	GetByName(name string) (BlogPost, error)
-	FetchLast5BlogPosts() ([]BlogPost, error)
+	FetchLast10BlogPosts() ([]BlogPost, error)
+	Delete(id uuid.UUID) error
+	Update(BlogPost) error
 }
 
 type BlogPost struct {
