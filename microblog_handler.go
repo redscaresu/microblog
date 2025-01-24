@@ -11,6 +11,7 @@ import (
 	"text/template"
 
 	"github.com/google/uuid"
+	"github.com/russross/blackfriday/v2"
 )
 
 var (
@@ -44,6 +45,7 @@ func ListenAndServe(addr string, app Application) error {
 	customMux.HandleFunc("/editpost", app.basicAuth(app.EditPostHandler))
 	customMux.HandleFunc("/newpost", app.basicAuth(app.NewPostHandler))
 	customMux.HandleFunc("/updatepost", app.basicAuth(app.UpdatePostHandler))
+	customMux.HandleFunc("/deletepost", app.basicAuth(app.DeletePostHandler))
 
 	err := http.ListenAndServe(addr, customMux)
 	return err
@@ -167,7 +169,6 @@ func (app *Application) GetBlogPostByName(w http.ResponseWriter, r *http.Request
 
 	queryParams := r.URL.Query()
 	name := queryParams.Get("name")
-	fmt.Println(name)
 
 	blog, err := app.Poststore.GetByName(name)
 	if err != nil {
@@ -175,6 +176,9 @@ func (app *Application) GetBlogPostByName(w http.ResponseWriter, r *http.Request
 		fmt.Fprint(w, err)
 		return
 	}
+
+	blog.Content = string(blackfriday.Run([]byte(blog.Content)))
+	blog.Title = string(blackfriday.Run([]byte(blog.Title)))
 
 	tpl, err := template.ParseFS(templates, "templates/blogpost.gohtml")
 	if err != nil {
@@ -206,14 +210,27 @@ func (app *Application) Submit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newBlogPost := &BlogPost{}
-	err = json.NewDecoder(r.Body).Decode(newBlogPost)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	title := r.FormValue("title")
+	if title == "" {
+		http.Error(w, "Title is empty", http.StatusBadRequest)
 		return
 	}
 
-	newBlogPost.ID = uuid.New()
+	content := r.FormValue("content")
+	if content == "" {
+		http.Error(w, "Content is empty", http.StatusBadRequest)
+		return
+	}
+
+	ID := uuid.New()
+
+	fmt.Printf("ID: %s, Title: %s, Content: %s\n", ID, title, content)
+
+	newBlogPost := &BlogPost{
+		ID:      ID,
+		Title:   title,
+		Content: content,
+	}
 
 	err = app.Poststore.Create(*newBlogPost)
 	if err != nil {
@@ -231,14 +248,12 @@ func (app *Application) Submit(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *Application) UpdatePostHandler(w http.ResponseWriter, r *http.Request) {
-	// Parse the form data
 	err := r.ParseForm()
 	if err != nil {
 		http.Error(w, "Unable to parse form", http.StatusBadRequest)
 		return
 	}
 
-	// Retrieve form values
 	id := r.FormValue("id")
 	title := r.FormValue("title")
 	content := r.FormValue("content")
@@ -264,7 +279,25 @@ func (app *Application) UpdatePostHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	http.Redirect(w, r, fmt.Sprintf("/editpost?name=%s", title), http.StatusSeeOther)
-
 	fmt.Fprintf(w, "Post updated successfully!")
+}
+
+func (app *Application) DeletePostHandler(w http.ResponseWriter, r *http.Request) {
+
+	queryParams := r.URL.Query()
+	id := queryParams.Get("id")
+
+	idUUID, err := uuid.Parse(id)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	err = app.Poststore.Delete(idUUID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Fprintf(w, "Post deleted successfully!")
 }
