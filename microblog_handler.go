@@ -113,13 +113,18 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	blogPost, err := app.Poststore.FetchLast10BlogPosts()
+	blogPosts, err := app.Poststore.FetchLast10BlogPosts()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	err = tpl.Execute(w, blogPost)
+	for i := range blogPosts {
+		blogPosts[i].Content = string(blackfriday.Run([]byte(blogPosts[i].Content)))
+		blogPosts[i].Title = string(blackfriday.Run([]byte(blogPosts[i].Title)))
+	}
+
+	err = tpl.Execute(w, blogPosts)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -258,7 +263,6 @@ func (app *Application) UpdatePostHandler(w http.ResponseWriter, r *http.Request
 	title := r.FormValue("title")
 	content := r.FormValue("content")
 
-	// Debug prints
 	fmt.Printf("ID: %s, Title: %s, Content: %s\n", id, title, content)
 
 	idUUID, err := uuid.Parse(id)

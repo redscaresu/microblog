@@ -7,7 +7,8 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
+            background-color: #0d1b2a; /* Dark blue background */
+            color: #ffffff; /* White text color */
             margin: 0;
             padding: 0;
         }
@@ -16,13 +17,15 @@
             width: 80%;
             margin: 0 auto;
             padding: 20px;
-            background-color: #fff;
+            background-color: #0d1b2a; /* Slightly lighter dark blue */
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px; /* Rounded corners */
         }
 
         .blog-post {
             border-bottom: 1px solid #ddd;
             padding: 10px 0;
+            text-align: center;
         }
 
         .blog-post:last-child {
@@ -32,6 +35,20 @@
         h1 {
             text-align: center;
             margin-top: 20px;
+            color: #e94560; /* Accent color for the title */
+        }
+
+        a {
+            color: #0fbcf9; /* Light blue color for links */
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        p {
+            color: #ffffff; /* White text color for paragraphs */
         }
     </style>
 </head>
@@ -43,6 +60,7 @@
         {{ range .}}
             <div class="blog-post">
                 <a href="/blogpost?name={{urlquery .Title}}">{{.Title}}</a>
+                <p>{{.Content}}</p>
             </div>
         {{ end }}
     </div>
