@@ -59,7 +59,7 @@
         <!-- Blog posts will be displayed here -->
         {{ range .}}
             <div class="blog-post">
-                <a href="/blogpost?name={{urlquery .Title}}">{{.Title}}</a>
+                <h2><a href="/blogpost?name={{urlquery .Name}}">{{.Title}}</a></h2>
                 <p>{{.Content}}</p>
             </div>
         {{ end }}

@@ -14,6 +14,7 @@ type PostStore interface {
 
 type BlogPost struct {
 	ID      uuid.UUID
+	Name    string
 	Title   string
 	Content string
 }

@@ -63,7 +63,7 @@ func (p *PostgresStore) GetAll() ([]BlogPost, error) {
 
 	for rows.Next() {
 		bp := NewBlogPost()
-		err := rows.Scan(&bp.ID, &bp.Title, &bp.Content)
+		err := rows.Scan(&bp.ID, &bp.Title, &bp.Content, &bp.Name)
 		if err != nil {
 			return nil, err
 		}
@@ -75,8 +75,7 @@ func (p *PostgresStore) GetAll() ([]BlogPost, error) {
 
 func (p *PostgresStore) Create(blogpost BlogPost) error {
 
-	fmt.Println(blogpost.Content)
-	rows, err := p.DB.Query("insert into blog values ($1,$2,$3);", blogpost.ID, blogpost.Title, blogpost.Content)
+	rows, err := p.DB.Query("insert into blog values ($1,$2,$3,$4);", blogpost.ID, blogpost.Title, blogpost.Content, blogpost.Name)
 	if err != nil {
 		return err
 	}
@@ -110,7 +109,7 @@ func (p *PostgresStore) GetByID(id uuid.UUID) (BlogPost, error) {
 	bp := NewBlogPost()
 
 	err := p.DB.QueryRow("SELECT * FROM blog WHERE blog_id = $1;", id).
-		Scan(&bp.ID, &bp.Title, &bp.Content)
+		Scan(&bp.ID, &bp.Title, &bp.Content, &bp.Name)
 	if err != nil {
 		return BlogPost{}, err
 	}
@@ -126,8 +125,8 @@ func (p *PostgresStore) GetByName(name string) (BlogPost, error) {
 		return BlogPost{}, fmt.Errorf("name is empty")
 	}
 
-	err := p.DB.QueryRow("SELECT * FROM blog WHERE blog_title = $1;", name).
-		Scan(&bp.ID, &bp.Title, &bp.Content)
+	err := p.DB.QueryRow("SELECT * FROM blog WHERE blog_name = $1;", name).
+		Scan(&bp.ID, &bp.Title, &bp.Content, &bp.Name)
 	if err != nil {
 		return BlogPost{}, err
 	}
@@ -146,7 +145,7 @@ func (p *PostgresStore) FetchLast10BlogPosts() ([]BlogPost, error) {
 
 	for rows.Next() {
 		bp := NewBlogPost()
-		err := rows.Scan(&bp.ID, &bp.Title, &bp.Content)
+		err := rows.Scan(&bp.ID, &bp.Title, &bp.Content, &bp.Name)
 		if err != nil {
 			return nil, err
 		}

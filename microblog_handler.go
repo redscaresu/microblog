@@ -8,6 +8,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"regexp"
+	"strings"
+
 	"text/template"
 
 	"github.com/google/uuid"
@@ -18,6 +21,8 @@ var (
 	//go:embed templates/*
 	templates embed.FS
 )
+
+const re = `[^a-zA-Z0-9\s]+`
 
 type Application struct {
 	Auth struct {
@@ -119,12 +124,9 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for i := range blogPosts {
-		blogPosts[i].Content = string(blackfriday.Run([]byte(blogPosts[i].Content)))
-		blogPosts[i].Title = string(blackfriday.Run([]byte(blogPosts[i].Title)))
-	}
+	normalizedBlogPost := normalizeBlogPost(blogPosts)
 
-	err = tpl.Execute(w, blogPosts)
+	err = tpl.Execute(w, normalizedBlogPost)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -227,12 +229,20 @@ func (app *Application) Submit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	content = content[:len(content)-1]
+
 	ID := uuid.New()
 
-	fmt.Printf("ID: %s, Title: %s, Content: %s\n", ID, title, content)
+	titleCopy := title
+	name := strings.ReplaceAll(titleCopy, " ", "-")
+	name = strings.ToLower(name)
+
+	rexp := regexp.MustCompile(re)
+	name = rexp.ReplaceAllString(name, "")
 
 	newBlogPost := &BlogPost{
 		ID:      ID,
+		Name:    name,
 		Title:   title,
 		Content: content,
 	}
@@ -304,4 +314,19 @@ func (app *Application) DeletePostHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	fmt.Fprintf(w, "Post deleted successfully!")
+}
+
+func normalizeBlogPost(blogPost []BlogPost) []BlogPost {
+	preview := 20
+	for i := range blogPost {
+		blogPost[i].Content = string(blackfriday.Run([]byte(blogPost[i].Content)))
+		blogPost[i].Title = string(blackfriday.Run([]byte(blogPost[i].Title)))
+	}
+
+	for i := range blogPost {
+		if len(blogPost[i].Content) > preview {
+			blogPost[i].Content = blogPost[i].Content[:preview] + "..."
+		}
+	}
+	return blogPost
 }
