@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ashouri.tech</title>
+    <title>ehsan ashouri</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -50,12 +50,50 @@
         p {
             color: #ffffff; /* White text color for paragraphs */
         }
+
+        .about-me {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .links {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .links a {
+            margin: 0 10px;
+            color: #0fbcf9;
+            text-decoration: none;
+        }
+
+        .links a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
-    <h1>ashouri.tech</h1>
+    <h1>ehsan ashouri</h1>
+
+    <div class="links">
+        <a href="https://github.com/redscaresu" target="_blank">GitHub</a>
+        <a href="https://www.linkedin.com/in/ehsanauk" target="_blank">LinkedIn</a>
+    </div>
+
+    <div class="about-me">
+        <p>I am a software engineer who loves writing Go and building scalable, efficient systems.</p>
+        <p>My background is in systems administration, and I have been involved in successive waves of technology, including
+        <p>virtualization, cloud computing, cloud-native architectures, and microservices.</p>
+        <p>I have worked for a variety of startups and established companies, both big and small,<p>
+        <p>contributing to innovative projects and solving complex technical challenges.</p>
+        <p>My expertise includes designing and implementing distributed systems, optimizing performance,
+        <p>and ensuring reliability in production environments.</p>
+        <p>Beyond coding, I am passionate about mentoring junior developers, sharing knowledge, and fostering collaborative team environments.</p>
+        <p>In my free time I am a keen grill master, beer sommelier and novice olympic weightlifter.</p>
+    </div>
 
     <div class="container" id="blog-container">
+        <h2 style="text-align: center; color: #e94560;">Blog Posts</h2>
         <!-- Blog posts will be displayed here -->
         {{ range .}}
             <div class="blog-post">
