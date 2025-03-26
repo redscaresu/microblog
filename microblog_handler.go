@@ -8,15 +8,21 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"regexp"
+	"strings"
+
 	"text/template"
 
 	"github.com/google/uuid"
+	"github.com/russross/blackfriday/v2"
 )
 
 var (
 	//go:embed templates/*
 	templates embed.FS
 )
+
+const re = `[^a-zA-Z0-9\s]+`
 
 type Application struct {
 	Auth struct {
@@ -39,10 +45,12 @@ func ListenAndServe(addr string, app Application) error {
 	customMux := http.NewServeMux()
 	customMux.HandleFunc("/", app.Home)
 	customMux.HandleFunc("/blogpost", app.GetBlogPostByName)
-	customMux.HandleFunc("/getlast5blogposts", app.GetLast5BlogPosts)
+	customMux.HandleFunc("/getlast5blogposts", app.GetLast10BlogPosts)
 	customMux.HandleFunc("/submit", app.basicAuth(app.Submit))
 	customMux.HandleFunc("/editpost", app.basicAuth(app.EditPostHandler))
 	customMux.HandleFunc("/newpost", app.basicAuth(app.NewPostHandler))
+	customMux.HandleFunc("/updatepost", app.basicAuth(app.UpdatePostHandler))
+	customMux.HandleFunc("/deletepost", app.basicAuth(app.DeletePostHandler))
 
 	err := http.ListenAndServe(addr, customMux)
 	return err
@@ -78,6 +86,10 @@ func (app *Application) NewPostHandler(w http.ResponseWriter, r *http.Request) {
 func (app *Application) EditPostHandler(w http.ResponseWriter, r *http.Request) {
 	queryParams := r.URL.Query()
 	name := queryParams.Get("name")
+	if name == "" {
+		http.Error(w, "name is empty", http.StatusBadRequest)
+		return
+	}
 
 	blog, err := app.Poststore.GetByName(name)
 	if err != nil {
@@ -106,22 +118,24 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	blogPost, err := app.Poststore.FetchLast5BlogPosts()
+	blogPosts, err := app.Poststore.FetchLast10BlogPosts()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	err = tpl.Execute(w, blogPost)
+	normalizedBlogPost := normalizeBlogPost(blogPosts)
+
+	err = tpl.Execute(w, normalizedBlogPost)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 }
 
-func (app *Application) GetLast5BlogPosts(w http.ResponseWriter, r *http.Request) {
+func (app *Application) GetLast10BlogPosts(w http.ResponseWriter, r *http.Request) {
 
-	last5Posts, err := app.Poststore.FetchLast5BlogPosts()
+	last5Posts, err := app.Poststore.FetchLast10BlogPosts()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		fmt.Fprint(w, err)
@@ -170,6 +184,9 @@ func (app *Application) GetBlogPostByName(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	blog.Content = string(blackfriday.Run([]byte(blog.Content)))
+	blog.Title = string(blackfriday.Run([]byte(blog.Title)))
+
 	tpl, err := template.ParseFS(templates, "templates/blogpost.gohtml")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -200,14 +217,35 @@ func (app *Application) Submit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newBlogPost := &BlogPost{}
-	err = json.NewDecoder(r.Body).Decode(newBlogPost)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	title := r.FormValue("title")
+	if title == "" {
+		http.Error(w, "Title is empty", http.StatusBadRequest)
 		return
 	}
 
-	newBlogPost.ID = uuid.New()
+	content := r.FormValue("content")
+	if content == "" {
+		http.Error(w, "Content is empty", http.StatusBadRequest)
+		return
+	}
+
+	content = content[:len(content)-1]
+
+	ID := uuid.New()
+
+	titleCopy := title
+	name := strings.ReplaceAll(titleCopy, " ", "-")
+	name = strings.ToLower(name)
+
+	rexp := regexp.MustCompile(re)
+	name = rexp.ReplaceAllString(name, "")
+
+	newBlogPost := &BlogPost{
+		ID:      ID,
+		Name:    name,
+		Title:   title,
+		Content: content,
+	}
 
 	err = app.Poststore.Create(*newBlogPost)
 	if err != nil {
@@ -222,4 +260,73 @@ func (app *Application) Submit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Fprintf(w, "Post submitted successfully!")
+}
+
+func (app *Application) UpdatePostHandler(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		http.Error(w, "Unable to parse form", http.StatusBadRequest)
+		return
+	}
+
+	id := r.FormValue("id")
+	title := r.FormValue("title")
+	content := r.FormValue("content")
+
+	fmt.Printf("ID: %s, Title: %s, Content: %s\n", id, title, content)
+
+	idUUID, err := uuid.Parse(id)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	newBlogPost := &BlogPost{
+		ID:      idUUID,
+		Title:   title,
+		Content: content,
+	}
+
+	err = app.Poststore.Update(*newBlogPost)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Fprintf(w, "Post updated successfully!")
+}
+
+func (app *Application) DeletePostHandler(w http.ResponseWriter, r *http.Request) {
+
+	queryParams := r.URL.Query()
+	id := queryParams.Get("id")
+
+	idUUID, err := uuid.Parse(id)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	err = app.Poststore.Delete(idUUID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Fprintf(w, "Post deleted successfully!")
+}
+
+func normalizeBlogPost(blogPost []BlogPost) []BlogPost {
+	preview := 20
+	for i := range blogPost {
+		blogPost[i].Content = string(blackfriday.Run([]byte(blogPost[i].Content)))
+		blogPost[i].Title = string(blackfriday.Run([]byte(blogPost[i].Title)))
+	}
+
+	for i := range blogPost {
+		if len(blogPost[i].Content) > preview {
+			blogPost[i].Content = blogPost[i].Content[:preview] + "..."
+		}
+	}
+	return blogPost
 }

@@ -63,7 +63,7 @@ func (p *PostgresStore) GetAll() ([]BlogPost, error) {
 
 	for rows.Next() {
 		bp := NewBlogPost()
-		err := rows.Scan(&bp.ID, &bp.Title, &bp.Content)
+		err := rows.Scan(&bp.ID, &bp.Title, &bp.Content, &bp.Name)
 		if err != nil {
 			return nil, err
 		}
@@ -75,12 +75,31 @@ func (p *PostgresStore) GetAll() ([]BlogPost, error) {
 
 func (p *PostgresStore) Create(blogpost BlogPost) error {
 
-	fmt.Println(blogpost.Content)
-	rows, err := p.DB.Query("insert into blog values ($1,$2,$3);", blogpost.ID, blogpost.Title, blogpost.Content)
+	rows, err := p.DB.Query("insert into blog values ($1,$2,$3,$4);", blogpost.ID, blogpost.Title, blogpost.Content, blogpost.Name)
 	if err != nil {
 		return err
 	}
 
+	fmt.Println(rows, err)
+	return nil
+}
+
+func (p *PostgresStore) Delete(id uuid.UUID) error {
+
+	rows, err := p.DB.Query("DELETE FROM blog WHERE blog_id = $1;", id)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(rows, err)
+	return nil
+}
+
+func (p *PostgresStore) Update(blogpost BlogPost) error {
+	rows, err := p.DB.Query("UPDATE blog SET blog_title = $1, blog_post = $2 WHERE blog_id = $3;", blogpost.Title, blogpost.Content, blogpost.ID)
+	if err != nil {
+		return err
+	}
 	fmt.Println(rows, err)
 	return nil
 }
@@ -90,7 +109,7 @@ func (p *PostgresStore) GetByID(id uuid.UUID) (BlogPost, error) {
 	bp := NewBlogPost()
 
 	err := p.DB.QueryRow("SELECT * FROM blog WHERE blog_id = $1;", id).
-		Scan(&bp.ID, &bp.Title, &bp.Content)
+		Scan(&bp.ID, &bp.Title, &bp.Content, &bp.Name)
 	if err != nil {
 		return BlogPost{}, err
 	}
@@ -102,8 +121,12 @@ func (p *PostgresStore) GetByName(name string) (BlogPost, error) {
 
 	bp := NewBlogPost()
 
-	err := p.DB.QueryRow("SELECT * FROM blog WHERE blog_title = $1;", name).
-		Scan(&bp.ID, &bp.Title, &bp.Content)
+	if name == "" {
+		return BlogPost{}, fmt.Errorf("name is empty")
+	}
+
+	err := p.DB.QueryRow("SELECT * FROM blog WHERE blog_name = $1;", name).
+		Scan(&bp.ID, &bp.Title, &bp.Content, &bp.Name)
 	if err != nil {
 		return BlogPost{}, err
 	}
@@ -111,18 +134,18 @@ func (p *PostgresStore) GetByName(name string) (BlogPost, error) {
 	return *bp, nil
 }
 
-func (p *PostgresStore) FetchLast5BlogPosts() ([]BlogPost, error) {
+func (p *PostgresStore) FetchLast10BlogPosts() ([]BlogPost, error) {
 
 	blogPosts := []BlogPost{}
 
-	rows, err := p.DB.Query("SELECT * FROM blog LIMIT 5;")
+	rows, err := p.DB.Query("SELECT * FROM blog LIMIT 10;")
 	if err != nil {
 		return nil, err
 	}
 
 	for rows.Next() {
 		bp := NewBlogPost()
-		err := rows.Scan(&bp.ID, &bp.Title, &bp.Content)
+		err := rows.Scan(&bp.ID, &bp.Title, &bp.Content, &bp.Name)
 		if err != nil {
 			return nil, err
 		}

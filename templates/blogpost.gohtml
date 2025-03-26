@@ -1,15 +1,50 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ashouri.tech</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #0d1b2a; /* Darker blue background */
+            color: #ffffff; /* White text color */
+            margin: 0;
+            padding: 0;
+        }
+
+        .blog-post {
+            padding: 10px 0;
+            text-align: center;
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 20px;
+            color: #e94560; /* Accent color for the title */
+        }
+
+        a {
+            color: #0fbcf9; /* Light blue color for links */
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        p {
+            color: #ffffff; /* White text color for paragraphs */
+        }
+    </style>
 </head>
 <body>
     <h1>{{.Title}}</h1>
 
-    <div class="container">
+    <div class="body">
         <div class="blog-post" id="blog-post-container">
             <!-- Blog post content will be displayed here -->
-            {{.Content}}
+            <p>{{.Content}}</p>
         </div>
     </div>
 </body>

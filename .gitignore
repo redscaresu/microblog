@@ -2,3 +2,5 @@ postgres-data/
 cloud-sql-proxy
 blog-375819-2c44d4a01389.json
 .DS_Store
+*.sh
+.vscode/launch.json
