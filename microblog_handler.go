@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
 
 	"text/template"
 
@@ -240,11 +241,14 @@ func (app *Application) Submit(w http.ResponseWriter, r *http.Request) {
 	rexp := regexp.MustCompile(re)
 	name = rexp.ReplaceAllString(name, "")
 
+	now := time.Now()
 	newBlogPost := &BlogPost{
-		ID:      ID,
-		Name:    name,
-		Title:   title,
-		Content: content,
+		ID:        ID,
+		Name:      name,
+		Title:     title,
+		Content:   content,
+		CreatedAt: now,
+		UpdatedAt: now,
 	}
 
 	err = app.Poststore.Create(*newBlogPost)

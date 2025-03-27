@@ -1,6 +1,10 @@
 package microblog
 
-import "github.com/google/uuid"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type PostStore interface {
 	Create(BlogPost) error
@@ -13,10 +17,12 @@ type PostStore interface {
 }
 
 type BlogPost struct {
-	ID      uuid.UUID
-	Name    string
-	Title   string
-	Content string
+	ID        uuid.UUID
+	Name      string
+	Title     string
+	Content   string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 func NewBlogPost() *BlogPost {
