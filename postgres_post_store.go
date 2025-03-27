@@ -109,7 +109,7 @@ func (p *PostgresStore) GetByID(id uuid.UUID) (BlogPost, error) {
 	bp := NewBlogPost()
 
 	err := p.DB.QueryRow("SELECT * FROM blog WHERE blog_id = $1;", id).
-		Scan(&bp.ID, &bp.Title, &bp.Content, &bp.Name)
+		Scan(&bp.ID, &bp.Title, &bp.Content, &bp.Name, &bp.CreatedAt, &bp.UpdatedAt)
 	if err != nil {
 		return BlogPost{}, err
 	}

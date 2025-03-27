@@ -7,6 +7,7 @@ import (
 	"microblog"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/go-cmp/cmp"
@@ -30,11 +31,13 @@ func TestNew(t *testing.T) {
 func TestCreate(t *testing.T) {
 
 	store := newTestDBConnection(t)
+	now := time.Now()
 	want := microblog.NewBlogPost()
 	want.ID = uuid.New()
 	want.Title = uuid.NewString()
 	want.Content = uuid.NewString()
-
+	want.CreatedAt = now
+	want.UpdatedAt = now
 	err := store.Create(*want)
 	require.NoError(t, err)
 
