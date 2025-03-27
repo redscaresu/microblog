@@ -1,6 +1,7 @@
 package microblog_test
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
@@ -12,7 +13,11 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
+	_ "github.com/lib/pq" // PostgreSQL driver
 	"github.com/stretchr/testify/require"
+	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/wait"
+	"gotest.tools/assert"
 )
 
 func TestNew(t *testing.T) {
@@ -28,16 +33,18 @@ func TestNew(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestCreate(t *testing.T) {
+func TestCreateWithContainer(t *testing.T) {
+	store, cleanup := setupTestContainer(t)
+	defer cleanup()
 
-	store := newTestDBConnection(t)
 	now := time.Now()
 	want := microblog.NewBlogPost()
 	want.ID = uuid.New()
-	want.Title = uuid.NewString()
-	want.Content = uuid.NewString()
+	want.Title = "Test Title"
+	want.Content = "Test Content"
 	want.CreatedAt = now
 	want.UpdatedAt = now
+
 	err := store.Create(*want)
 	require.NoError(t, err)
 
@@ -50,13 +57,34 @@ func TestCreate(t *testing.T) {
 }
 
 func TestGetAll(t *testing.T) {
-	store := newTestDBConnection(t)
+	store, cleanup := setupTestContainer(t)
+	defer cleanup()
+
+	now := time.Now()
+	want1 := microblog.NewBlogPost()
+	want1.ID = uuid.New()
+	want1.Title = "Test Title 1"
+	want1.Content = "Test Content 1"
+	want1.CreatedAt = now
+	want1.UpdatedAt = now
+
+	want2 := microblog.NewBlogPost()
+	want2.ID = uuid.New()
+	want2.Title = "Test Title 1"
+	want2.Content = "Test Content 1"
+	want2.CreatedAt = now
+	want2.UpdatedAt = now
+
+	err := store.Create(*want1)
+	require.NoError(t, err)
+
+	err = store.Create(*want2)
+	require.NoError(t, err)
+
 	got, err := store.GetAll()
 	require.NoError(t, err)
 
-	if (len(got)) < 1 {
-		t.Error(1, got)
-	}
+	assert.Equal(t, 2, len(got))
 }
 
 func TestGetError(t *testing.T) {
@@ -168,4 +196,84 @@ func newTestDBConnection(t *testing.T) *microblog.PostgresStore {
 
 	log.Print("Successfully connected!")
 	return &microblog.PostgresStore{DB: db}
+}
+
+func setupTestContainer(t *testing.T) (*microblog.PostgresStore, func()) {
+	t.Helper()
+
+	// Create a PostgreSQL container
+	ctx := context.Background()
+	req := testcontainers.ContainerRequest{
+		Image:        "postgres:15", // Use the desired PostgreSQL version
+		ExposedPorts: []string{"5432/tcp"},
+		Env: map[string]string{
+			"POSTGRES_USER":     "postgres",
+			"POSTGRES_PASSWORD": "postgres",
+			"POSTGRES_DB":       "testdb",
+		},
+		WaitingFor: wait.ForListeningPort("5432/tcp").WithStartupTimeout(30 * time.Second),
+	}
+
+	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: req,
+		Started:          true,
+	})
+	if err != nil {
+		t.Fatalf("Failed to start container: %v", err)
+	}
+
+	// Get the container's host and port
+	host, err := container.Host(ctx)
+	if err != nil {
+		t.Fatalf("Failed to get container host: %v", err)
+	}
+
+	port, err := container.MappedPort(ctx, "5432")
+	if err != nil {
+		t.Fatalf("Failed to get container port: %v", err)
+	}
+
+	// Build the PostgreSQL connection string
+	dsn := fmt.Sprintf("host=%s port=%s user=postgres password=postgres dbname=testdb sslmode=disable", host, port.Port())
+
+	// Connect to the database
+	db, err := sql.Open("postgres", dsn)
+	if err != nil {
+		t.Fatalf("Failed to connect to database: %v", err)
+	}
+
+	// Ping the database to ensure it's ready
+	err = db.Ping()
+	if err != nil {
+		t.Fatalf("Failed to ping database: %v", err)
+	}
+
+	log.Println("PostgreSQL container is ready!")
+
+	// Run the SQL script to create tables
+	runSQLScript(t, db, "sql/create_tables.sql")
+
+	// Return the PostgresStore and a cleanup function
+	return &microblog.PostgresStore{DB: db}, func() {
+		db.Close()
+		container.Terminate(ctx)
+	}
+}
+
+func runSQLScript(t *testing.T, db *sql.DB, scriptPath string) {
+	t.Helper()
+
+	// Read the SQL script file
+	script, err := os.ReadFile(scriptPath)
+	if err != nil {
+		t.Fatalf("Failed to read SQL script: %v", err)
+	}
+
+	// Execute the SQL script
+	_, err = db.Exec(string(script))
+	if err != nil {
+		t.Fatalf("Failed to execute SQL script: %v", err)
+	}
+
+	log.Println("SQL script executed successfully!")
 }
