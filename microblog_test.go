@@ -45,43 +45,35 @@ func TestListenAndServe_UsesGivenStore(t *testing.T) {
 func TestSubmitHandler(t *testing.T) {
 	t.Parallel()
 
-	// Create a mock store
 	store := &microblog.MemoryPostStore{}
 	app := &microblog.Application{Poststore: store}
 
-	// Create a test server
 	server := httptest.NewServer(http.HandlerFunc(app.Submit))
 	defer server.Close()
 
-	// Prepare form data
 	form := url.Values{}
 	form.Add("title", "Test Title")
 	form.Add("content", "Test Content")
 
-	// Send POST request
 	resp, err := http.PostForm(server.URL, form)
 	require.NoError(t, err)
 	defer resp.Body.Close()
 
-	// Check response status
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 
-	// Decode the response body
 	var got microblog.BlogPost
 	err = json.NewDecoder(resp.Body).Decode(&got)
 	require.NoError(t, err)
 
-	// Verify the blog post was created in the store
 	createdPost, err := store.GetByID(got.ID)
 	require.NoError(t, err)
 	require.NotNil(t, createdPost)
 
-	// Check the created post fields
 	assert.Equal(t, "Test Title", createdPost.Title)
-	// assert.Equal(t, "Test Content", createdPost.Content)
-	// assert.NotEmpty(t, createdPost.ID)
-	// assert.NotEmpty(t, createdPost.CreatedAt)
-	// assert.NotEmpty(t, createdPost.UpdatedAt)
+	assert.Equal(t, "Test Content", createdPost.Content)
+	assert.NotEmpty(t, createdPost.ID)
+	assert.NotEmpty(t, createdPost.CreatedAt)
+	assert.NotEmpty(t, createdPost.UpdatedAt)
 }
 
 func TestSubmitHandlerBasicAuthError(t *testing.T) {

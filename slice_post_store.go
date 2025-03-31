@@ -11,12 +11,17 @@ func (s *MemoryPostStore) GetAll() ([]*BlogPost, error) {
 }
 
 func (s *MemoryPostStore) Create(blogpost *BlogPost) error {
-	blogpost.ID = uuid.New()
+	s.BlogPosts = append(s.BlogPosts, blogpost)
 	return nil
 }
 
 func (s *MemoryPostStore) GetByID(id uuid.UUID) (*BlogPost, error) {
-	return NewBlogPost(), nil
+	for _, v := range s.BlogPosts {
+		if v.ID == id {
+			return v, nil
+		}
+	}
+	return &BlogPost{}, nil
 }
 
 func (s *MemoryPostStore) GetByName(name string) (*BlogPost, error) {
