@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	microblog "microblog/internal"
+	"microblog/internal/repository"
 	"net"
 	"os"
 )
@@ -12,7 +13,7 @@ func main() {
 
 	app := microblog.Application{}
 	// connect to DB
-	psStore, err := microblog.New()
+	psStore, err := repository.New()
 	if err != nil {
 		log.Fatal(err)
 	}

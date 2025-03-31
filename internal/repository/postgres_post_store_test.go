@@ -1,12 +1,12 @@
-package microblog_test
+package repository_test
 
 import (
 	"context"
 	"database/sql"
 	"fmt"
 	"log"
-	microblog "microblog/internal"
 	"microblog/internal/models"
+	"microblog/internal/repository"
 	"os"
 	"testing"
 	"time"
@@ -100,7 +100,7 @@ func TestGetError(t *testing.T) {
 	}
 	defer db.Close()
 
-	store := &microblog.PostgresStore{DB: db}
+	store := &repository.PostgresStore{DB: db}
 
 	invalidID := uuid.New()
 
@@ -120,7 +120,7 @@ func TestCreateError(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Close()
 
-	store := &microblog.PostgresStore{DB: db}
+	store := &repository.PostgresStore{DB: db}
 
 	blogpost := models.BlogPost{
 		ID:      uuid.New(),
@@ -141,7 +141,7 @@ func TestGetAllError(t *testing.T) {
 
 	defer db.Close()
 
-	store := &microblog.PostgresStore{DB: db}
+	store := &repository.PostgresStore{DB: db}
 
 	mock.ExpectQuery("SELECT \\* FROM blog;").
 		WillReturnError(sql.ErrTxDone)
@@ -153,7 +153,7 @@ func TestGetAllError(t *testing.T) {
 
 }
 
-func setupTestContainer(t *testing.T) (*microblog.PostgresStore, func()) {
+func setupTestContainer(t *testing.T) (*repository.PostgresStore, func()) {
 	t.Helper()
 
 	ctx := context.Background()
@@ -190,9 +190,9 @@ func setupTestContainer(t *testing.T) (*microblog.PostgresStore, func()) {
 
 	log.Println("PostgreSQL container is ready!")
 
-	runSQLScript(t, db, "../sql/create_tables.sql")
+	runSQLScript(t, db, "../../sql/create_tables.sql")
 
-	return &microblog.PostgresStore{DB: db}, func() {
+	return &repository.PostgresStore{DB: db}, func() {
 		db.Close()
 		container.Terminate(ctx)
 	}

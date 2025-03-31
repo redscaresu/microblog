@@ -1,4 +1,4 @@
-package microblog
+package repository
 
 import (
 	"database/sql"

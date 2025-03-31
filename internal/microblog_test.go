@@ -6,6 +6,7 @@ import (
 	"io"
 	microblog "microblog/internal"
 	"microblog/internal/models"
+	"microblog/internal/repository"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -22,7 +23,7 @@ func TestListenAndServe_UsesGivenStore(t *testing.T) {
 
 	id := uuid.New()
 	blogPost := &models.BlogPost{ID: id, Title: "foo", Content: "boo"}
-	store := &microblog.MemoryPostStore{BlogPosts: []*models.BlogPost{blogPost}}
+	store := &repository.MemoryPostStore{BlogPosts: []*models.BlogPost{blogPost}}
 
 	addr := newTestServer(t, store)
 
@@ -42,7 +43,7 @@ func TestListenAndServe_UsesGivenStore(t *testing.T) {
 func TestSubmitHandler(t *testing.T) {
 	t.Parallel()
 
-	store := &microblog.MemoryPostStore{}
+	store := &repository.MemoryPostStore{}
 	app := &microblog.Application{Poststore: store}
 
 	server := httptest.NewServer(http.HandlerFunc(app.Submit))
@@ -76,7 +77,7 @@ func TestSubmitHandler(t *testing.T) {
 func TestSubmitHandlerBasicAuthError(t *testing.T) {
 	t.Parallel()
 
-	store := &microblog.MemoryPostStore{}
+	store := &repository.MemoryPostStore{}
 	addr := newTestServer(t, store)
 
 	endpoint := fmt.Sprintf("http://%v/newpost", addr)
