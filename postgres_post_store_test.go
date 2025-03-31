@@ -35,7 +35,7 @@ func TestCreateWithContainer(t *testing.T) {
 	want.CreatedAt = nowTime
 	want.UpdatedAt = nowTime
 
-	err = store.Create(*want)
+	err = store.Create(want)
 	require.NoError(t, err)
 
 	got, err := store.GetByID(want.ID)
@@ -74,10 +74,10 @@ func TestGetAll(t *testing.T) {
 	var wantSlice []microblog.BlogPost
 	wantSlice = append(wantSlice, *want1, *want2)
 
-	err = store.Create(*want1)
+	err = store.Create(want1)
 	require.NoError(t, err)
 
-	err = store.Create(*want2)
+	err = store.Create(want2)
 	require.NoError(t, err)
 
 	got, err := store.GetAll()
@@ -128,7 +128,7 @@ func TestCreateError(t *testing.T) {
 	}
 
 	mock.ExpectQuery("insert into blog values (.+)").WillReturnError(sql.ErrTxDone)
-	err = store.Create(blogpost)
+	err = store.Create(&blogpost)
 	assert.ErrorIs(t, err, sql.ErrTxDone)
 	assert.NoError(t, mock.ExpectationsWereMet(), "There were unfulfilled expectations: %s", err)
 

@@ -230,8 +230,6 @@ func (app *Application) Submit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	content = content[:len(content)-1]
-
 	ID := uuid.New()
 
 	titleCopy := title
@@ -251,7 +249,7 @@ func (app *Application) Submit(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt: now,
 	}
 
-	err = app.Poststore.Create(*newBlogPost)
+	err = app.Poststore.Create(newBlogPost)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -293,7 +291,7 @@ func (app *Application) UpdatePostHandler(w http.ResponseWriter, r *http.Request
 		UpdatedAt: now,
 	}
 
-	err = app.Poststore.Update(*newBlogPost)
+	err = app.Poststore.Update(newBlogPost)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -322,7 +320,7 @@ func (app *Application) DeletePostHandler(w http.ResponseWriter, r *http.Request
 	fmt.Fprintf(w, "Post deleted successfully!")
 }
 
-func normalizeBlogPost(blogPost []BlogPost) []BlogPost {
+func normalizeBlogPost(blogPost []*BlogPost) []*BlogPost {
 	preview := 20
 	for i := range blogPost {
 		blogPost[i].Content = string(blackfriday.Run([]byte(blogPost[i].Content)))
