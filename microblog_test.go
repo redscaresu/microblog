@@ -1,7 +1,6 @@
 package microblog_test
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -152,9 +151,4 @@ func newTestServer(t *testing.T, store microblog.PostStore) net.Addr {
 	}
 
 	return netListener.Addr()
-}
-
-func basicAuth() string {
-	auth := "foo" + ":" + "foo"
-	return base64.StdEncoding.EncodeToString([]byte(auth))
 }
