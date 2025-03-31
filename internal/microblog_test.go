@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"microblog"
+	microblog "microblog/internal"
 	"net"
 	"net/http"
 	"net/http/httptest"

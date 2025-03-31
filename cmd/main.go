@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
-	"microblog"
+	microblog "microblog/internal"
 	"net"
 	"os"
 )

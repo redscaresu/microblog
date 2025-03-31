@@ -4,10 +4,7 @@ go 1.23.0
 
 toolchain go1.24.1
 
-require (
-	github.com/google/go-cmp v0.7.0
-	github.com/google/uuid v1.6.0
-)
+require github.com/google/uuid v1.6.0
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0
@@ -15,7 +12,6 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0
 	github.com/stretchr/testify v1.10.0
 	github.com/testcontainers/testcontainers-go v0.36.0
-	gotest.tools v2.2.0+incompatible
 )
 
 require (

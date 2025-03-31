@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"microblog"
+	microblog "microblog/internal"
 	"os"
 	"testing"
 	"time"
@@ -44,7 +44,7 @@ func TestCreateWithContainer(t *testing.T) {
 	got.UpdatedAt = got.UpdatedAt.UTC()
 	got.CreatedAt = got.CreatedAt.UTC()
 
-	assert.Equal(t, want, &got)
+	assert.Equal(t, want, got)
 }
 
 func TestGetAll(t *testing.T) {
@@ -71,8 +71,8 @@ func TestGetAll(t *testing.T) {
 	want2.CreatedAt = nowTime.UTC() // Ensure UTC
 	want2.UpdatedAt = nowTime.UTC() // Ensure UTC
 
-	var wantSlice []microblog.BlogPost
-	wantSlice = append(wantSlice, *want1, *want2)
+	var wantSlice []*microblog.BlogPost
+	wantSlice = append(wantSlice, want1, want2)
 
 	err = store.Create(want1)
 	require.NoError(t, err)
@@ -189,7 +189,7 @@ func setupTestContainer(t *testing.T) (*microblog.PostgresStore, func()) {
 
 	log.Println("PostgreSQL container is ready!")
 
-	runSQLScript(t, db, "sql/create_tables.sql")
+	runSQLScript(t, db, "../sql/create_tables.sql")
 
 	return &microblog.PostgresStore{DB: db}, func() {
 		db.Close()
