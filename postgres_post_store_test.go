@@ -155,7 +155,6 @@ func TestGetAllError(t *testing.T) {
 func setupTestContainer(t *testing.T) (*microblog.PostgresStore, func()) {
 	t.Helper()
 
-	// Create a PostgreSQL container
 	ctx := context.Background()
 	req := testcontainers.ContainerRequest{
 		Image:        "postgres:15", // Use the desired PostgreSQL version
