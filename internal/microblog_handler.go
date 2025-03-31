@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"microblog/internal/models"
+	"microblog/internal/repository"
 	"net/http"
 	"regexp"
 	"strings"
@@ -31,7 +32,7 @@ type Application struct {
 		Username string
 		Password string
 	}
-	Poststore PostStore
+	Poststore repository.PostStore
 }
 
 func ListenAndServe(addr string, app Application) error {

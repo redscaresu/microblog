@@ -112,7 +112,7 @@ func TestIsAuthenticatedReturnsFalseWhenIncorrectPasswordProvided(t *testing.T) 
 
 }
 
-func newTestServer(t *testing.T, store microblog.PostStore) net.Addr {
+func newTestServer(t *testing.T, store repository.PostStore) net.Addr {
 	t.Helper()
 
 	netListener, err := net.Listen("tcp", "127.0.0.1:")
