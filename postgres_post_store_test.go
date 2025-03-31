@@ -136,9 +136,8 @@ func TestCreateError(t *testing.T) {
 
 func TestGetAllError(t *testing.T) {
 	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Fatalf("Error creating mock database: %v", err)
-	}
+	require.NoError(t, err)
+
 	defer db.Close()
 
 	store := &microblog.PostgresStore{DB: db}
@@ -173,42 +172,26 @@ func setupTestContainer(t *testing.T) (*microblog.PostgresStore, func()) {
 		ContainerRequest: req,
 		Started:          true,
 	})
-	if err != nil {
-		t.Fatalf("Failed to start container: %v", err)
-	}
+	require.NoError(t, err, "failed to start container")
 
-	// Get the container's host and port
 	host, err := container.Host(ctx)
-	if err != nil {
-		t.Fatalf("Failed to get container host: %v", err)
-	}
+	require.NoError(t, err, "failed to get container host and port")
 
 	port, err := container.MappedPort(ctx, "5432")
-	if err != nil {
-		t.Fatalf("Failed to get container port: %v", err)
-	}
+	require.NoError(t, err, "error mapping port")
 
-	// Build the PostgreSQL connection string
 	dsn := fmt.Sprintf("host=%s port=%s user=postgres password=postgres dbname=testdb sslmode=disable", host, port.Port())
 
-	// Connect to the database
 	db, err := sql.Open("postgres", dsn)
-	if err != nil {
-		t.Fatalf("Failed to connect to database: %v", err)
-	}
+	require.NoError(t, err, "failed to connect to database")
 
-	// Ping the database to ensure it's ready
 	err = db.Ping()
-	if err != nil {
-		t.Fatalf("Failed to ping database: %v", err)
-	}
+	require.NoError(t, err, "failed to ping database")
 
 	log.Println("PostgreSQL container is ready!")
 
-	// Run the SQL script to create tables
 	runSQLScript(t, db, "sql/create_tables.sql")
 
-	// Return the PostgresStore and a cleanup function
 	return &microblog.PostgresStore{DB: db}, func() {
 		db.Close()
 		container.Terminate(ctx)
@@ -218,17 +201,11 @@ func setupTestContainer(t *testing.T) (*microblog.PostgresStore, func()) {
 func runSQLScript(t *testing.T, db *sql.DB, scriptPath string) {
 	t.Helper()
 
-	// Read the SQL script file
 	script, err := os.ReadFile(scriptPath)
-	if err != nil {
-		t.Fatalf("Failed to read SQL script: %v", err)
-	}
+	require.NoError(t, err)
 
-	// Execute the SQL script
 	_, err = db.Exec(string(script))
-	if err != nil {
-		t.Fatalf("Failed to execute SQL script: %v", err)
-	}
+	require.NoError(t, err)
 
 	log.Println("SQL script executed successfully!")
 }
