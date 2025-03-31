@@ -241,7 +241,7 @@ func (app *Application) Submit(w http.ResponseWriter, r *http.Request) {
 	rexp := regexp.MustCompile(re)
 	name = rexp.ReplaceAllString(name, "")
 
-	now := time.Now()
+	now := time.Now().UTC()
 	newBlogPost := &BlogPost{
 		ID:        ID,
 		Name:      name,
@@ -285,10 +285,12 @@ func (app *Application) UpdatePostHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	now := time.Now().UTC()
 	newBlogPost := &BlogPost{
-		ID:      idUUID,
-		Title:   title,
-		Content: content,
+		ID:        idUUID,
+		Title:     title,
+		Content:   content,
+		UpdatedAt: now,
 	}
 
 	err = app.Poststore.Update(*newBlogPost)
