@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"microblog/internal/models"
 	"net/http"
 	"regexp"
 	"strings"
@@ -240,7 +241,7 @@ func (app *Application) Submit(w http.ResponseWriter, r *http.Request) {
 	name = rexp.ReplaceAllString(name, "")
 
 	now := time.Now().UTC()
-	newBlogPost := &BlogPost{
+	newBlogPost := &models.BlogPost{
 		ID:        ID,
 		Name:      name,
 		Title:     title,
@@ -284,7 +285,7 @@ func (app *Application) UpdatePostHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	now := time.Now().UTC()
-	newBlogPost := &BlogPost{
+	newBlogPost := &models.BlogPost{
 		ID:        idUUID,
 		Title:     title,
 		Content:   content,
@@ -320,7 +321,7 @@ func (app *Application) DeletePostHandler(w http.ResponseWriter, r *http.Request
 	fmt.Fprintf(w, "Post deleted successfully!")
 }
 
-func normalizeBlogPost(blogPost []*BlogPost) []*BlogPost {
+func normalizeBlogPost(blogPost []*models.BlogPost) []*models.BlogPost {
 	preview := 20
 	for i := range blogPost {
 		blogPost[i].Content = string(blackfriday.Run([]byte(blogPost[i].Content)))

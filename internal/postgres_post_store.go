@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"microblog/internal/models"
 	"os"
 
 	"github.com/google/uuid"
@@ -52,9 +53,9 @@ func New() (*PostgresStore, error) {
 	return &PostgresStore{DB: db}, nil
 }
 
-func (p *PostgresStore) GetAll() ([]*BlogPost, error) {
+func (p *PostgresStore) GetAll() ([]*models.BlogPost, error) {
 
-	blogPosts := []*BlogPost{}
+	blogPosts := []*models.BlogPost{}
 
 	rows, err := p.DB.Query("SELECT * FROM blog;")
 	if err != nil {
@@ -62,7 +63,7 @@ func (p *PostgresStore) GetAll() ([]*BlogPost, error) {
 	}
 
 	for rows.Next() {
-		bp := NewBlogPost()
+		bp := models.NewBlogPost()
 		err := rows.Scan(&bp.ID, &bp.Title, &bp.Content, &bp.Name, &bp.CreatedAt, &bp.UpdatedAt)
 		if err != nil {
 			return nil, err
@@ -73,7 +74,7 @@ func (p *PostgresStore) GetAll() ([]*BlogPost, error) {
 	return blogPosts, nil
 }
 
-func (p *PostgresStore) Create(blogpost *BlogPost) error {
+func (p *PostgresStore) Create(blogpost *models.BlogPost) error {
 
 	rows, err := p.DB.Query("insert into blog values ($1,$2,$3,$4,$5,$6);", blogpost.ID, blogpost.Title, blogpost.Content, blogpost.Name, blogpost.CreatedAt, blogpost.UpdatedAt)
 	if err != nil {
@@ -95,7 +96,7 @@ func (p *PostgresStore) Delete(id uuid.UUID) error {
 	return nil
 }
 
-func (p *PostgresStore) Update(blogpost *BlogPost) error {
+func (p *PostgresStore) Update(blogpost *models.BlogPost) error {
 	rows, err := p.DB.Query("UPDATE blog SET blog_title = $1, blog_post = $2, updated_at = $3 WHERE blog_id = $4;", blogpost.Title, blogpost.Content, blogpost.UpdatedAt, blogpost.ID)
 	if err != nil {
 		return err
@@ -104,39 +105,39 @@ func (p *PostgresStore) Update(blogpost *BlogPost) error {
 	return nil
 }
 
-func (p *PostgresStore) GetByID(id uuid.UUID) (*BlogPost, error) {
+func (p *PostgresStore) GetByID(id uuid.UUID) (*models.BlogPost, error) {
 
-	bp := NewBlogPost()
+	bp := models.NewBlogPost()
 
 	err := p.DB.QueryRow("SELECT * FROM blog WHERE blog_id = $1;", id).
 		Scan(&bp.ID, &bp.Title, &bp.Content, &bp.Name, &bp.CreatedAt, &bp.UpdatedAt)
 	if err != nil {
-		return &BlogPost{}, err
+		return &models.BlogPost{}, err
 	}
 
 	return bp, nil
 }
 
-func (p *PostgresStore) GetByName(name string) (*BlogPost, error) {
+func (p *PostgresStore) GetByName(name string) (*models.BlogPost, error) {
 
-	bp := NewBlogPost()
+	bp := models.NewBlogPost()
 
 	if name == "" {
-		return &BlogPost{}, fmt.Errorf("name is empty")
+		return &models.BlogPost{}, fmt.Errorf("name is empty")
 	}
 
 	err := p.DB.QueryRow("SELECT * FROM blog WHERE blog_name = $1;", name).
 		Scan(&bp.ID, &bp.Title, &bp.Content, &bp.Name, &bp.CreatedAt, &bp.UpdatedAt)
 	if err != nil {
-		return &BlogPost{}, err
+		return &models.BlogPost{}, err
 	}
 
 	return bp, nil
 }
 
-func (p *PostgresStore) FetchLast10BlogPosts() ([]*BlogPost, error) {
+func (p *PostgresStore) FetchLast10BlogPosts() ([]*models.BlogPost, error) {
 
-	blogPosts := []*BlogPost{}
+	blogPosts := []*models.BlogPost{}
 
 	rows, err := p.DB.Query("SELECT * FROM blog LIMIT 10;")
 	if err != nil {
@@ -144,7 +145,7 @@ func (p *PostgresStore) FetchLast10BlogPosts() ([]*BlogPost, error) {
 	}
 
 	for rows.Next() {
-		bp := NewBlogPost()
+		bp := models.NewBlogPost()
 		err := rows.Scan(&bp.ID, &bp.Title, &bp.Content, &bp.Name, &bp.CreatedAt, &bp.UpdatedAt)
 		if err != nil {
 			return nil, err

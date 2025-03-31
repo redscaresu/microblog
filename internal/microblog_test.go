@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	microblog "microblog/internal"
+	"microblog/internal/models"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -20,8 +21,8 @@ func TestListenAndServe_UsesGivenStore(t *testing.T) {
 	t.Parallel()
 
 	id := uuid.New()
-	blogPost := &microblog.BlogPost{ID: id, Title: "foo", Content: "boo"}
-	store := &microblog.MemoryPostStore{BlogPosts: []*microblog.BlogPost{blogPost}}
+	blogPost := &models.BlogPost{ID: id, Title: "foo", Content: "boo"}
+	store := &microblog.MemoryPostStore{BlogPosts: []*models.BlogPost{blogPost}}
 
 	addr := newTestServer(t, store)
 
@@ -57,7 +58,7 @@ func TestSubmitHandler(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 
-	var got microblog.BlogPost
+	var got models.BlogPost
 	err = json.NewDecoder(resp.Body).Decode(&got)
 	require.NoError(t, err)
 

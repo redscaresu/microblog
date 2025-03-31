@@ -1,31 +1,17 @@
 package microblog
 
 import (
-	"time"
+	"microblog/internal/models"
 
 	"github.com/google/uuid"
 )
 
 type PostStore interface {
-	Create(*BlogPost) error
-	GetAll() ([]*BlogPost, error)
-	GetByID(id uuid.UUID) (*BlogPost, error)
-	GetByName(name string) (*BlogPost, error)
-	FetchLast10BlogPosts() ([]*BlogPost, error)
+	Create(*models.BlogPost) error
+	GetAll() ([]*models.BlogPost, error)
+	GetByID(id uuid.UUID) (*models.BlogPost, error)
+	GetByName(name string) (*models.BlogPost, error)
+	FetchLast10BlogPosts() ([]*models.BlogPost, error)
 	Delete(id uuid.UUID) error
-	Update(*BlogPost) error
-}
-
-type BlogPost struct {
-	ID        uuid.UUID
-	Name      string
-	Title     string
-	Content   string
-	CreatedAt time.Time
-	UpdatedAt time.Time
-}
-
-func NewBlogPost() *BlogPost {
-	blogpost := &BlogPost{}
-	return blogpost
+	Update(*models.BlogPost) error
 }

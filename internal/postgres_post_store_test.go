@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	microblog "microblog/internal"
+	"microblog/internal/models"
 	"os"
 	"testing"
 	"time"
@@ -28,7 +29,7 @@ func TestCreateWithContainer(t *testing.T) {
 	nowTime, err := time.Parse(time.RFC3339, now)
 	require.NoError(t, err)
 
-	want := microblog.NewBlogPost()
+	want := models.NewBlogPost()
 	want.ID = uuid.New()
 	want.Title = "Test Title"
 	want.Content = "Test Content"
@@ -55,7 +56,7 @@ func TestGetAll(t *testing.T) {
 	nowTime, err := time.Parse(time.RFC3339, now)
 	require.NoError(t, err)
 
-	want1 := microblog.NewBlogPost()
+	want1 := models.NewBlogPost()
 	want1.ID = uuid.New()
 	want1.Name = "Test Name 1"
 	want1.Title = "Test Title 1"
@@ -63,7 +64,7 @@ func TestGetAll(t *testing.T) {
 	want1.CreatedAt = nowTime.UTC() // Ensure UTC
 	want1.UpdatedAt = nowTime.UTC() // Ensure UTC
 
-	want2 := microblog.NewBlogPost()
+	want2 := models.NewBlogPost()
 	want2.ID = uuid.New()
 	want2.Name = "Test Name 2"
 	want2.Title = "Test Title 2"
@@ -71,7 +72,7 @@ func TestGetAll(t *testing.T) {
 	want2.CreatedAt = nowTime.UTC() // Ensure UTC
 	want2.UpdatedAt = nowTime.UTC() // Ensure UTC
 
-	var wantSlice []*microblog.BlogPost
+	var wantSlice []*models.BlogPost
 	wantSlice = append(wantSlice, want1, want2)
 
 	err = store.Create(want1)
@@ -121,7 +122,7 @@ func TestCreateError(t *testing.T) {
 
 	store := &microblog.PostgresStore{DB: db}
 
-	blogpost := microblog.BlogPost{
+	blogpost := models.BlogPost{
 		ID:      uuid.New(),
 		Title:   "Test Post",
 		Content: "Test Content",
