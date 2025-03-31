@@ -13,7 +13,6 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -90,9 +89,7 @@ func TestSubmitHandlerBasicAuthError(t *testing.T) {
 	require.NoError(t, err)
 	defer resp.Body.Close()
 
-	if !cmp.Equal("401 Unauthorized", resp.Status) {
-		t.Error(cmp.Diff(http.StatusUnauthorized, resp.Status))
-	}
+	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 }
 
 func TestIsAuthenticatedWhenCorrectPasswordProvidedReturnsTrue(t *testing.T) {
@@ -102,9 +99,7 @@ func TestIsAuthenticatedWhenCorrectPasswordProvidedReturnsTrue(t *testing.T) {
 	got := microblog.IsAuthenticated("password123")
 	want := true
 
-	if !cmp.Equal(want, got) {
-		t.Error(cmp.Diff(want, got))
-	}
+	assert.Equal(t, want, got)
 }
 
 func TestIsAuthenticatedReturnsFalseWhenIncorrectPasswordProvided(t *testing.T) {
@@ -114,9 +109,8 @@ func TestIsAuthenticatedReturnsFalseWhenIncorrectPasswordProvided(t *testing.T) 
 	got := microblog.IsAuthenticated("hotdog")
 	want := false
 
-	if !cmp.Equal(want, got) {
-		t.Error(cmp.Diff(want, got))
-	}
+	assert.Equal(t, want, got)
+
 }
 
 func TestNewPostHandler(t *testing.T) {
