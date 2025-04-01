@@ -83,7 +83,17 @@ func (app *Application) basicAuth(next http.HandlerFunc) http.HandlerFunc {
 }
 
 func (app *Application) NewPostHandler(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "templates/newpost.gohtml")
+	tpl, err := template.ParseFS(templates, "templates/newpost.gohtml")
+	if err != nil {
+		http.Error(w, "Failed to load template", http.StatusInternalServerError)
+		return
+	}
+
+	err = tpl.Execute(w, nil)
+	if err != nil {
+		http.Error(w, "Failed to render template", http.StatusInternalServerError)
+		return
+	}
 }
 
 func (app *Application) EditPostHandler(w http.ResponseWriter, r *http.Request) {
@@ -243,12 +253,13 @@ func (app *Application) Submit(w http.ResponseWriter, r *http.Request) {
 
 	now := time.Now().UTC()
 	newBlogPost := &models.BlogPost{
-		ID:        ID,
-		Name:      name,
-		Title:     title,
-		Content:   content,
-		CreatedAt: now,
-		UpdatedAt: now,
+		ID:            ID,
+		Name:          name,
+		Title:         title,
+		Content:       content,
+		CreatedAt:     now,
+		UpdatedAt:     now,
+		FormattedDate: formattedDate(now),
 	}
 
 	err = app.Poststore.Create(newBlogPost)
@@ -335,4 +346,8 @@ func normalizeBlogPost(blogPost []*models.BlogPost) []*models.BlogPost {
 		}
 	}
 	return blogPost
+}
+
+func formattedDate(now time.Time) string {
+	return fmt.Sprintf("%s %d, %d", now.Month().String(), now.Day(), now.Year())
 }

@@ -94,6 +94,7 @@
         <!-- Blog posts will be displayed here -->
         {{ range .}}
             <div class="blog-post">
+                <h3 style="color: grey; font-size: 0.9em;">{{.FormattedDate}}</h3> <!-- Smaller and grey -->
                 <h2><a href="/blogpost?name={{urlquery .Name}}">{{.Title}}</a></h2>
                 <p>{{.Content}}</p>
             </div>

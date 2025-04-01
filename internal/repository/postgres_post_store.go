@@ -64,7 +64,7 @@ func (p *PostgresStore) GetAll() ([]*models.BlogPost, error) {
 
 	for rows.Next() {
 		bp := models.NewBlogPost()
-		err := rows.Scan(&bp.ID, &bp.Title, &bp.Content, &bp.Name, &bp.CreatedAt, &bp.UpdatedAt)
+		err := rows.Scan(&bp.ID, &bp.Title, &bp.Content, &bp.Name, &bp.FormattedDate, &bp.CreatedAt, &bp.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -76,7 +76,7 @@ func (p *PostgresStore) GetAll() ([]*models.BlogPost, error) {
 
 func (p *PostgresStore) Create(blogpost *models.BlogPost) error {
 
-	rows, err := p.DB.Query("insert into blog values ($1,$2,$3,$4,$5,$6);", blogpost.ID, blogpost.Title, blogpost.Content, blogpost.Name, blogpost.CreatedAt, blogpost.UpdatedAt)
+	rows, err := p.DB.Query("insert into blog values ($1,$2,$3,$4,$5,$6,$7);", blogpost.ID, blogpost.Title, blogpost.Content, blogpost.Name, blogpost.FormattedDate, blogpost.CreatedAt, blogpost.UpdatedAt)
 	if err != nil {
 		return err
 	}
@@ -110,7 +110,7 @@ func (p *PostgresStore) GetByID(id uuid.UUID) (*models.BlogPost, error) {
 	bp := models.NewBlogPost()
 
 	err := p.DB.QueryRow("SELECT * FROM blog WHERE blog_id = $1;", id).
-		Scan(&bp.ID, &bp.Title, &bp.Content, &bp.Name, &bp.CreatedAt, &bp.UpdatedAt)
+		Scan(&bp.ID, &bp.Title, &bp.Content, &bp.Name, &bp.FormattedDate, &bp.CreatedAt, &bp.UpdatedAt)
 	if err != nil {
 		return &models.BlogPost{}, err
 	}
@@ -127,7 +127,7 @@ func (p *PostgresStore) GetByName(name string) (*models.BlogPost, error) {
 	}
 
 	err := p.DB.QueryRow("SELECT * FROM blog WHERE blog_name = $1;", name).
-		Scan(&bp.ID, &bp.Title, &bp.Content, &bp.Name, &bp.CreatedAt, &bp.UpdatedAt)
+		Scan(&bp.ID, &bp.Title, &bp.Content, &bp.Name, &bp.FormattedDate, &bp.CreatedAt, &bp.UpdatedAt)
 	if err != nil {
 		return &models.BlogPost{}, err
 	}
@@ -146,7 +146,7 @@ func (p *PostgresStore) FetchLast10BlogPosts() ([]*models.BlogPost, error) {
 
 	for rows.Next() {
 		bp := models.NewBlogPost()
-		err := rows.Scan(&bp.ID, &bp.Title, &bp.Content, &bp.Name, &bp.CreatedAt, &bp.UpdatedAt)
+		err := rows.Scan(&bp.ID, &bp.Title, &bp.Content, &bp.Name, &bp.FormattedDate, &bp.CreatedAt, &bp.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}

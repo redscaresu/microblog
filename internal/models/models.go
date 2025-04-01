@@ -7,12 +7,13 @@ import (
 )
 
 type BlogPost struct {
-	ID        uuid.UUID
-	Name      string
-	Title     string
-	Content   string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID            uuid.UUID
+	Name          string
+	Title         string
+	Content       string
+	FormattedDate string
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
 }
 
 func NewBlogPost() *BlogPost {

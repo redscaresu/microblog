@@ -33,6 +33,7 @@ func TestCreateWithContainer(t *testing.T) {
 	want.ID = uuid.New()
 	want.Title = "Test Title"
 	want.Content = "Test Content"
+	want.FormattedDate = formattedDate(t, nowTime.UTC())
 	want.CreatedAt = nowTime
 	want.UpdatedAt = nowTime
 
@@ -61,6 +62,7 @@ func TestGetAll(t *testing.T) {
 	want1.Name = "Test Name 1"
 	want1.Title = "Test Title 1"
 	want1.Content = "Test Content 1"
+	want1.FormattedDate = formattedDate(t, nowTime.UTC())
 	want1.CreatedAt = nowTime.UTC() // Ensure UTC
 	want1.UpdatedAt = nowTime.UTC() // Ensure UTC
 
@@ -69,6 +71,7 @@ func TestGetAll(t *testing.T) {
 	want2.Name = "Test Name 2"
 	want2.Title = "Test Title 2"
 	want2.Content = "Test Content 2"
+	want2.FormattedDate = formattedDate(t, nowTime.UTC())
 	want2.CreatedAt = nowTime.UTC() // Ensure UTC
 	want2.UpdatedAt = nowTime.UTC() // Ensure UTC
 
@@ -158,7 +161,7 @@ func setupTestContainer(t *testing.T) (*repository.PostgresStore, func()) {
 
 	ctx := context.Background()
 	req := testcontainers.ContainerRequest{
-		Image:        "postgres:15", // Use the desired PostgreSQL version
+		Image:        "postgres:15",
 		ExposedPorts: []string{"5432/tcp"},
 		Env: map[string]string{
 			"POSTGRES_USER":     "postgres",
@@ -208,4 +211,9 @@ func runSQLScript(t *testing.T, db *sql.DB, scriptPath string) {
 	require.NoError(t, err)
 
 	log.Println("SQL script executed successfully!")
+}
+
+func formattedDate(t *testing.T, now time.Time) string {
+	t.Helper()
+	return fmt.Sprintf("%d %d, %d", now.Month(), now.Day(), now.Year())
 }
