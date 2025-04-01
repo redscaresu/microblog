@@ -121,6 +121,40 @@ func TestUpdatePostHandler(t *testing.T) {
 	assert.Equal(t, createdPost.ID, updatedPost.ID)
 }
 
+func TestUpdateHandlerBasicAuthError(t *testing.T) {
+	t.Parallel()
+
+	store := &repository.MemoryPostStore{}
+	addr := newTestServer(t, store)
+
+	endpoint := fmt.Sprintf("http://%v/updatepost", addr)
+	req, err := http.NewRequest("GET", endpoint, nil)
+	require.NoError(t, err)
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+}
+
+func TestEditPostHandlerBasicAuthError(t *testing.T) {
+	t.Parallel()
+
+	store := &repository.MemoryPostStore{}
+	addr := newTestServer(t, store)
+
+	endpoint := fmt.Sprintf("http://%v/editpost?name=%s", addr, "doesnotexit")
+	req, err := http.NewRequest("GET", endpoint, nil)
+	require.NoError(t, err)
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+}
+
 func TestSubmitHandlerBasicAuthError(t *testing.T) {
 	t.Parallel()
 
