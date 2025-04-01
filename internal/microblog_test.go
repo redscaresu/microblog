@@ -22,7 +22,7 @@ func TestListenAndServe_UsesGivenStore(t *testing.T) {
 	t.Parallel()
 
 	id := uuid.New()
-	blogPost := &models.BlogPost{ID: id, Title: "foo", Content: "boo"}
+	blogPost := &models.BlogPost{ID: id, Title: "foo", Content: "boo", FormattedDate: "1 June, 2025"}
 	store := &repository.MemoryPostStore{BlogPosts: []*models.BlogPost{blogPost}}
 
 	addr := newTestServer(t, store)
@@ -34,10 +34,12 @@ func TestListenAndServe_UsesGivenStore(t *testing.T) {
 	require.NoError(t, err)
 
 	got := string(read)
+	fmt.Println(got)
 
 	assert.Contains(t, got, "<h2><a href=\"/blogpost?name=")
 	assert.Contains(t, got, "<p>foo</p>")
 	assert.Contains(t, got, "<p>boo</p>")
+	assert.Contains(t, got, "<h3 style=\"color: grey; font-size: 0.9em;\">1 June, 2025</h3>")
 }
 
 func TestSubmitHandler(t *testing.T) {
@@ -72,6 +74,7 @@ func TestSubmitHandler(t *testing.T) {
 	assert.NotEmpty(t, createdPost.ID)
 	assert.NotEmpty(t, createdPost.CreatedAt)
 	assert.NotEmpty(t, createdPost.UpdatedAt)
+	assert.NotEmpty(t, createdPost.FormattedDate)
 }
 
 func TestSubmitHandlerBasicAuthError(t *testing.T) {
