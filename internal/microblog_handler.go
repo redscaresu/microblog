@@ -86,12 +86,14 @@ func (app *Application) NewPostHandler(w http.ResponseWriter, r *http.Request) {
 	tpl, err := template.ParseFS(templates, "templates/newpost.gohtml")
 	if err != nil {
 		http.Error(w, "Failed to load template", http.StatusInternalServerError)
+		fmt.Fprint(w, err)
 		return
 	}
 
 	err = tpl.Execute(w, nil)
 	if err != nil {
 		http.Error(w, "Failed to render template", http.StatusInternalServerError)
+		fmt.Fprint(w, err)
 		return
 	}
 }
@@ -114,12 +116,14 @@ func (app *Application) EditPostHandler(w http.ResponseWriter, r *http.Request) 
 	tpl, err := template.ParseFS(templates, "templates/editpost.gohtml")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		fmt.Fprint(w, err)
 		return
 	}
 
 	err = tpl.Execute(w, blog)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		fmt.Fprint(w, err)
 		return
 	}
 }
@@ -128,12 +132,14 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 	tpl, err := template.ParseFS(templates, "templates/home.gohtml")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		fmt.Fprint(w, err)
 		return
 	}
 
 	blogPosts, err := app.Poststore.FetchLast10BlogPosts()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		fmt.Fprint(w, err)
 		return
 	}
 
@@ -142,6 +148,7 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 	err = tpl.Execute(w, normalizedBlogPost)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		fmt.Fprint(w, err)
 		return
 	}
 }
