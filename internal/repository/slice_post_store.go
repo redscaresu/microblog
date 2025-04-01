@@ -2,6 +2,7 @@ package repository
 
 import (
 	"microblog/internal/models"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -40,6 +41,13 @@ func (s *MemoryPostStore) Delete(id uuid.UUID) error {
 	return nil
 }
 
-func (s *MemoryPostStore) Update(blogpost *models.BlogPost) error {
+func (s *MemoryPostStore) Update(updatedBlogpost *models.BlogPost) error {
+	for _, v := range s.BlogPosts {
+		if v.ID == updatedBlogpost.ID {
+			v.Content = updatedBlogpost.Content
+			v.Title = updatedBlogpost.Title
+			v.UpdatedAt = time.Now().UTC()
+		}
+	}
 	return nil
 }

@@ -34,8 +34,6 @@ func TestListenAndServe_UsesGivenStore(t *testing.T) {
 	require.NoError(t, err)
 
 	got := string(read)
-	fmt.Println(got)
-
 	assert.Contains(t, got, "<h2><a href=\"/blogpost?name=")
 	assert.Contains(t, got, "<p>foo</p>")
 	assert.Contains(t, got, "<p>boo</p>")
@@ -75,6 +73,52 @@ func TestSubmitHandler(t *testing.T) {
 	assert.NotEmpty(t, createdPost.CreatedAt)
 	assert.NotEmpty(t, createdPost.UpdatedAt)
 	assert.NotEmpty(t, createdPost.FormattedDate)
+}
+
+func TestUpdatePostHandler(t *testing.T) {
+	t.Parallel()
+
+	store := &repository.MemoryPostStore{}
+	app := &microblog.Application{Poststore: store}
+
+	submitServer := httptest.NewServer(http.HandlerFunc(app.Submit))
+	defer submitServer.Close()
+
+	form := url.Values{}
+	form.Add("title", "Original Title")
+	form.Add("content", "Original Content")
+
+	resp, err := http.PostForm(submitServer.URL, form)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var createdPost models.BlogPost
+	err = json.NewDecoder(resp.Body).Decode(&createdPost)
+	require.NoError(t, err)
+
+	updateServer := httptest.NewServer(http.HandlerFunc(app.UpdatePostHandler))
+	defer updateServer.Close()
+
+	editForm := url.Values{}
+	editForm.Add("id", createdPost.ID.String())
+	editForm.Add("title", "Updated Title")
+	editForm.Add("content", "Updated Content")
+
+	editResp, err := http.PostForm(updateServer.URL, editForm)
+	require.NoError(t, err)
+	defer editResp.Body.Close()
+
+	require.Equal(t, http.StatusOK, editResp.StatusCode)
+
+	updatedPost, err := store.GetByID(createdPost.ID)
+	require.NoError(t, err)
+	require.NotNil(t, updatedPost)
+
+	assert.Equal(t, "Updated Title", updatedPost.Title)
+	assert.Equal(t, "Updated Content", updatedPost.Content)
+	assert.Equal(t, createdPost.ID, updatedPost.ID)
 }
 
 func TestSubmitHandlerBasicAuthError(t *testing.T) {

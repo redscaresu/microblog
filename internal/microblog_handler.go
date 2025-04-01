@@ -54,7 +54,6 @@ func ListenAndServe(addr string, app Application) error {
 	customMux.HandleFunc("/newpost", app.basicAuth(app.NewPostHandler))
 	customMux.HandleFunc("/updatepost", app.basicAuth(app.UpdatePostHandler))
 	customMux.HandleFunc("/deletepost", app.basicAuth(app.DeletePostHandler))
-
 	err := http.ListenAndServe(addr, customMux)
 	return err
 }
