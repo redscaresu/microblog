@@ -19,7 +19,7 @@ jobs:
         run: docker version
       - name: Run Tests
         env:
-          DOCKER_HOST: tcp://localhost:2375
+          DOCKER_HOST: tcp://localhost:5432
         run: go test ./... -v
       - name: List Running Containers
         run: docker ps -a
