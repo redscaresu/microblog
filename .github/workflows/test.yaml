@@ -6,13 +6,12 @@ jobs:
     strategy:
       matrix:
         go-version: ['stable', 'oldstable']
-        os: [ubuntu-latest]
+        os: [ubuntu-latest] # Docker-in-Docker is only supported on Linux
     runs-on: ${{ matrix.os }}
     services:
       docker:
         image: docker:24.0.5-dind
-        privileged: true
-        options: --privileged
+        options: --privileged # Correctly set privileged mode here
         ports:
           - 2375:2375
         env:
