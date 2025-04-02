@@ -183,8 +183,10 @@ func setupTestContainer(t *testing.T) (*repository.PostgresStore, func()) {
 
 	require.NoError(t, err, "failed to map container port")
 
-	dsn := fmt.Sprintf("host=%s port=%s user=postgres password=postgres dbname=testdb sslmode=disable", host, port.Port())
+	port, err := container.MappedPort(ctx, "5432")
+	require.NoError(t, err, "failed to map container port")
 
+	dsn := fmt.Sprintf("host=%s port=%s user=postgres password=postgres dbname=testdb sslmode=disable", host, port.Port())
 	db, err := sql.Open("postgres", dsn)
 	require.NoError(t, err, "failed to connect to PostgreSQL database")
 
