@@ -1,9 +1,10 @@
 FROM golang:1.24.2-alpine AS build
 
-WORKDIR /src/cmd
-COPY go.* *.go /src/
-COPY /internal/templates /src/templates
-COPY cmd/main.go /src/cmd/
+# Copy the entire project into the container
+COPY . .
+
+# Build the Go binary
+RUN CGO_ENABLED=0 go build -o /bin/blog ./cmd/main.go
 
 RUN CGO_ENABLED=0 go build -o /bin/blog
 
