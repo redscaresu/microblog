@@ -1,23 +1,43 @@
-# Based on https://github.com/mvdan/github-actions-golang
 on: [push, pull_request]
 name: Tests
+
 jobs:
   test:
     strategy:
       matrix:
         go-version: ['stable', 'oldstable']
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
+    services:
+      docker:
+        image: docker:24.0.5-dind
+        privileged: true
+        options: --privileged
+        ports:
+          - 2375:2375
+        env:
+          DOCKER_TLS_CERTDIR: ""
     steps:
       - uses: actions/setup-go@v4
         with:
           go-version: ${{ matrix.go-version }}
       - uses: actions/checkout@v3
-      - run: go test ./...
+      - name: Set up Docker CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker.io
+          docker version
+      - name: Run Tests
+        env:
+          DOCKER_HOST: tcp://localhost:2375
+        run: |
+          go test ./... -v
+
   govulncheck:
     runs-on: ubuntu-latest
     steps:
       - uses: golang/govulncheck-action@v1
+
   gocritic:
     runs-on: ubuntu-latest
     steps:
