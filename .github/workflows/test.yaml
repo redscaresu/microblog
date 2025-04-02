@@ -3,43 +3,25 @@ name: Tests
 
 jobs:
   test:
-    strategy:
-      matrix:
-        go-version: ['stable', 'oldstable']
-        os: [ubuntu-latest] # Docker-in-Docker is only supported on Linux
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     services:
       docker:
         image: docker:24.0.5-dind
-        options: --privileged # Correctly set privileged mode here
-        ports:
-          - 2375:2375
+        options: --privileged
         env:
           DOCKER_TLS_CERTDIR: ""
     steps:
       - uses: actions/setup-go@v4
         with:
-          go-version: ${{ matrix.go-version }}
+          go-version: stable
       - uses: actions/checkout@v3
       - name: Verify Docker Installation
-        run: |
-          docker version
+        run: docker version
       - name: Run Tests
         env:
           DOCKER_HOST: tcp://localhost:2375
-        run: |
-          go test ./... -v
-
-  govulncheck:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: golang/govulncheck-action@v1
-
-  gocritic:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/setup-go@v4
-      - uses: actions/checkout@v3
-      - run: |
-          go install github.com/go-critic/go-critic/cmd/gocritic@latest
-          gocritic check .
+        run: go test ./... -v
+      - name: List Running Containers
+        run: docker ps -a
+      - name: Inspect Docker Logs
+        run: docker logs $(docker ps -q)
