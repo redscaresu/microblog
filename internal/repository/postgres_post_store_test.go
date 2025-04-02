@@ -159,7 +159,9 @@ func TestGetAllError(t *testing.T) {
 func setupTestContainer(t *testing.T) (*repository.PostgresStore, func()) {
 	t.Helper()
 
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel() // Ensure the context is canceled when the function exits
+
 	req := testcontainers.ContainerRequest{
 		Image:        "postgres:15",
 		ExposedPorts: []string{"5432/tcp"},
@@ -168,36 +170,41 @@ func setupTestContainer(t *testing.T) (*repository.PostgresStore, func()) {
 			"POSTGRES_PASSWORD": "postgres",
 			"POSTGRES_DB":       "testdb",
 		},
-		WaitingFor: wait.ForListeningPort("5432/tcp").WithStartupTimeout(30 * time.Second),
+		WaitingFor: wait.ForListeningPort("5432/tcp").WithStartupTimeout(90 * time.Second),
 	}
 
 	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: req,
 		Started:          true,
 	})
-	require.NoError(t, err, "failed to start container")
+	require.NoError(t, err, "failed to start PostgreSQL container")
 
 	host, err := container.Host(ctx)
-	require.NoError(t, err, "failed to get container host and port")
+	require.NoError(t, err, "failed to get container host")
 
 	port, err := container.MappedPort(ctx, "5432")
-	require.NoError(t, err, "error mapping port")
+	require.NoError(t, err, "failed to map container port")
 
 	dsn := fmt.Sprintf("host=%s port=%s user=postgres password=postgres dbname=testdb sslmode=disable", host, port.Port())
 
 	db, err := sql.Open("postgres", dsn)
-	require.NoError(t, err, "failed to connect to database")
+	require.NoError(t, err, "failed to connect to PostgreSQL database")
 
 	err = db.Ping()
-	require.NoError(t, err, "failed to ping database")
+	require.NoError(t, err, "failed to ping PostgreSQL database")
 
 	log.Println("PostgreSQL container is ready!")
 
 	runSQLScript(t, db, "../../sql/create_tables.sql")
 
 	return &repository.PostgresStore{DB: db}, func() {
-		db.Close()
-		container.Terminate(ctx)
+		if err := db.Close(); err != nil {
+			log.Printf("failed to close database connection: %v", err)
+		}
+
+		if err := container.Terminate(ctx); err != nil {
+			log.Printf("failed to terminate container: %v", err)
+		}
 	}
 }
 
