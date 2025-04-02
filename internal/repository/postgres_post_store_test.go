@@ -160,7 +160,6 @@ func setupTestContainer(t *testing.T) (*repository.PostgresStore, func()) {
 	t.Helper()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
-	defer cancel() // Ensure the context is canceled when the function exits
 
 	req := testcontainers.ContainerRequest{
 		Image:        "postgres:15",
@@ -182,7 +181,6 @@ func setupTestContainer(t *testing.T) (*repository.PostgresStore, func()) {
 	host, err := container.Host(ctx)
 	require.NoError(t, err, "failed to get container host")
 
-	port, err := container.MappedPort(ctx, "5432")
 	require.NoError(t, err, "failed to map container port")
 
 	dsn := fmt.Sprintf("host=%s port=%s user=postgres password=postgres dbname=testdb sslmode=disable", host, port.Port())
@@ -205,6 +203,8 @@ func setupTestContainer(t *testing.T) (*repository.PostgresStore, func()) {
 		if err := container.Terminate(ctx); err != nil {
 			log.Printf("failed to terminate container: %v", err)
 		}
+
+		cancel()
 	}
 }
 
