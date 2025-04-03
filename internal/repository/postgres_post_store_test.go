@@ -203,7 +203,6 @@ func setupTestContainer(t *testing.T) (*repository.PostgresStore, func()) {
 		if err := container.Terminate(ctx); err != nil {
 			log.Printf("failed to terminate container: %v", err)
 		}
-
 		cancel()
 	}
 }
