@@ -181,8 +181,6 @@ func setupTestContainer(t *testing.T) (*repository.PostgresStore, func()) {
 	host, err := container.Host(ctx)
 	require.NoError(t, err, "failed to get container host")
 
-	require.NoError(t, err, "failed to map container port")
-
 	port, err := container.MappedPort(ctx, "5432")
 	require.NoError(t, err, "failed to map container port")
 

@@ -3,7 +3,7 @@ name: ci
 on:
   workflow_run:
     workflows:
-      - Tests # This must match the `name` field in test.yaml
+      - Tests
     types:
       - completed
 
