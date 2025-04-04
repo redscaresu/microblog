@@ -25,7 +25,7 @@ terraform {
 provider "scaleway" {
   alias   = "p2"
   profile = "myProfile"
-  zone   = "fr-par-1"
-  region = "fr-par"
+  zone    = "fr-par-1"
+  region  = "fr-par"
 }
 

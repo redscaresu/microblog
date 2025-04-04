@@ -23,9 +23,16 @@ func New() (*PostgresStore, error) {
 	user := os.Getenv("DB_USER")
 	dbName := os.Getenv("DB_NAME")
 
-	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
-		"password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbName)
+	var psqlInfo string
+	if os.Getenv("LOCAL") == "local" {
+		psqlInfo = fmt.Sprintf("host=%s port=%s user=%s "+
+			"password=%s dbname=%s sslmode=disable",
+			host, port, user, password, dbName)
+	} else {
+		psqlInfo = fmt.Sprintf("host=%s port=%s user=%s "+
+			"password=%s dbname=%s sslmode=require options=databaseid%%3D%s",
+			host, port, user, password, dbName, os.Getenv("DB_ID"))
+	}
 
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
