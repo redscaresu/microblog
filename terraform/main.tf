@@ -23,7 +23,7 @@ resource "scaleway_container" "main" {
   port           = 8080
   cpu_limit      = 70
   memory_limit   = 128
-  min_scale      = 1
+  min_scale      = 0
   max_scale      = 1
   timeout        = 600
   privacy        = "public"
@@ -31,17 +31,23 @@ resource "scaleway_container" "main" {
   deploy         = true
   http_option    = "redirected"
 
+  scaling_option {
+    concurrent_requests_threshold = 10
+    cpu_usage_threshold           = 0
+    memory_usage_threshold        = 0
+  }
+
   environment_variables = {
-    "AUTH_USERNAME"   = "admin",
+    "AUTH_USERNAME" = "admin",
   }
 
   secret_environment_variables = {
-    "DB_PASSWORD" = scaleway_iam_api_key.api_key.secret_key
-    "DB_USER"     = scaleway_iam_application.blog.id,
-    "DB_HOST"     = trimsuffix(trimprefix(regex(":\\/\\/.*:", scaleway_sdb_sql_database.blog.endpoint), "://"), ":")
-    "DB_NAME"     = scaleway_sdb_sql_database.blog.name,
-    "DB_PORT"     = trimprefix(regex(":[0-9]{1,5}", scaleway_sdb_sql_database.blog.endpoint), ":"),
-    "DB_ID"       = scaleway_sdb_sql_database.blog.id
+    "DB_PASSWORD"   = scaleway_iam_api_key.api_key.secret_key
+    "DB_USER"       = scaleway_iam_application.blog.id,
+    "DB_HOST"       = trimsuffix(trimprefix(regex(":\\/\\/.*:", scaleway_sdb_sql_database.blog.endpoint), "://"), ":")
+    "DB_NAME"       = scaleway_sdb_sql_database.blog.name,
+    "DB_PORT"       = trimprefix(regex(":[0-9]{1,5}", scaleway_sdb_sql_database.blog.endpoint), ":"),
+    "DB_ID"         = scaleway_sdb_sql_database.blog.id
     "AUTH_PASSWORD" = random_password.auth_password.result
   }
 }
