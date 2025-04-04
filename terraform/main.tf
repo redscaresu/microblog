@@ -10,7 +10,7 @@ resource scaleway_container main {
     description = "my blog"
     namespace_id = scaleway_container_namespace.main.id
     registry_image = "${scaleway_container_namespace.main.registry_endpoint}/microblog:latest"
-    port = 9997
+    port = 8080
     cpu_limit = 70
     memory_limit = 128
     min_scale = 1
@@ -21,10 +21,11 @@ resource scaleway_container main {
     deploy = true
     http_option = "redirected"
 
-    environment_variables = {
-        "foo" = "var"
-    }
-    secret_environment_variables = {
-      "key" = "secret"
-    }
+  secret_environment_variables = {
+    "DB_PASSWORD" = scaleway_iam_api_key.api_key.secret_key
+    "DB_USER" = scaleway_iam_application.blog.id,
+    "DB_HOST"     = trimsuffix(trimprefix(regex(":\\/\\/.*:", scaleway_sdb_sql_database.blog.endpoint), "://"), ":")
+    "DB_NAME"     = scaleway_sdb_sql_database.blog.name,
+    "DB_PORT"     = trimprefix(regex(":[0-9]{1,5}", scaleway_sdb_sql_database.blog.endpoint), ":"),
+  }
 }
