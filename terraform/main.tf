@@ -4,6 +4,16 @@ resource "scaleway_container_namespace" "main" {
   provider    = scaleway.p2
 }
 
+resource "random_password" "auth_password" {
+  length           = 16
+  special          = true
+  min_numeric      = 1
+  min_upper        = 1
+  min_lower        = 1
+  min_special      = 1
+  override_special = "_-"
+}
+
 resource "scaleway_container" "main" {
   provider       = scaleway.p2
   name           = "blog"
@@ -21,6 +31,10 @@ resource "scaleway_container" "main" {
   deploy         = true
   http_option    = "redirected"
 
+  environment_variables = {
+    "AUTH_USERNAME"   = "admin",
+  }
+
   secret_environment_variables = {
     "DB_PASSWORD" = scaleway_iam_api_key.api_key.secret_key
     "DB_USER"     = scaleway_iam_application.blog.id,
@@ -28,5 +42,12 @@ resource "scaleway_container" "main" {
     "DB_NAME"     = scaleway_sdb_sql_database.blog.name,
     "DB_PORT"     = trimprefix(regex(":[0-9]{1,5}", scaleway_sdb_sql_database.blog.endpoint), ":"),
     "DB_ID"       = scaleway_sdb_sql_database.blog.id
+    "AUTH_PASSWORK" = random_password.auth_password.result
   }
+}
+
+output "auth_password" {
+  value       = random_password.auth_password.result
+  sensitive   = true
+  description = "The generated random password for the exporter"
 }
