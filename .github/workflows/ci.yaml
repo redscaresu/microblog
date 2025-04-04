@@ -25,6 +25,6 @@ jobs:
           context: .
           push: true
           tags: |
-            microblog:latest
-            microblog:${{ github.run_number }}
-            microblog:${{ github.sha }}
+            ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/microblog:latest
+            ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/microblog:${{ github.run_number }}
+            ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/microblog:${{ github.sha }}
