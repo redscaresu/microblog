@@ -42,7 +42,7 @@ resource "scaleway_container" "main" {
     "DB_NAME"     = scaleway_sdb_sql_database.blog.name,
     "DB_PORT"     = trimprefix(regex(":[0-9]{1,5}", scaleway_sdb_sql_database.blog.endpoint), ":"),
     "DB_ID"       = scaleway_sdb_sql_database.blog.id
-    "AUTH_PASSWORK" = random_password.auth_password.result
+    "AUTH_PASSWORD" = random_password.auth_password.result
   }
 }
 
