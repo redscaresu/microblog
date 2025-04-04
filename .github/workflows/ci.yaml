@@ -6,6 +6,7 @@ on:
       - Tests
     types:
       - completed
+  workflow_dispatch: # Add this to enable manual triggering
 
 jobs:
   docker:
