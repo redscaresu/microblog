@@ -33,8 +33,6 @@ resource "scaleway_container" "main" {
 
   scaling_option {
     concurrent_requests_threshold = 10
-    cpu_usage_threshold           = 0
-    memory_usage_threshold        = 0
   }
 
   environment_variables = {
