@@ -19,7 +19,12 @@ jobs:
           username: nologin
           password: ${{ secrets.SCALEWAY_API_KEY }}
           registry: ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}
-      - name: Build the Docker image
-        run: docker build . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/my-docker-image
-      - name: Push the Docker Image
-        run: docker push ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/my-docker-image
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            microblog:latest
+            microblog:${{ github.run_number }}
+            microblog:${{ github.sha }}
