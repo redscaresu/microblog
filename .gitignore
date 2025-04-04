@@ -4,4 +4,13 @@ blog-375819-2c44d4a01389.json
 .DS_Store
 *.sh
 .vscode/launch.json
-terrform/*tfvars
+
+# Ignore Terraform state files
+terraform.tfstate
+terraform.tfstate.backup
+*.tfstate
+*.tfstate.*
+
+# Ignore Terraform directories
+.terraform/
+.terraform.lock.hcl
