@@ -13,4 +13,3 @@ terraform.tfstate.backup
 
 # Ignore Terraform directories
 .terraform/
-.terraform.lock.hcl
