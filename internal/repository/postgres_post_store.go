@@ -44,7 +44,7 @@ func New() (*PostgresStore, error) {
 	}
 
 	_, err = db.Exec(`
-    CREATE TABLE IF NOT EXISTS messages (
+    CREATE TABLE IF NOT EXISTS blog (
 		blog_id uuid NOT NULL,
 		blog_title TEXT NOT NULL,
 		blog_post TEXT NOT NULL,
