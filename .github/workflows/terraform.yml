@@ -9,6 +9,8 @@ on:
  
 env:
  TF_LOG: INFO
+ AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }} # Map Scaleway Access Key to AWS env variable
+ AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }} # Map Scaleway Secret Key to AWS env variable
  SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
  SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
  BUCKET_TF_STATE: ${{ secrets.BUCKET_TF_STATE}}
