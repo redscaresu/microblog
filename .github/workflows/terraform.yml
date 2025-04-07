@@ -10,7 +10,7 @@ on:
 env:
  TF_LOG: INFO
  SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
- SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_ACCESS }}
+ SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
  BUCKET_TF_STATE: ${{ secrets.BUCKET_TF_STATE}}
  
 jobs:
