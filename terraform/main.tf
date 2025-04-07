@@ -1,6 +1,7 @@
 resource "scaleway_container_namespace" "main" {
   name        = "blog"
   description = "blog"
+  project_id  = var.project_id
 }
 
 resource "random_password" "auth_password" {

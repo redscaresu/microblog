@@ -1,8 +1,3 @@
-variable "organization_id" {
-  description = "The Scaleway organization ID"
-  type        = string
-}
-
 data "scaleway_account_project" "default" {
   name     = "default"
   organization_id = var.organization_id
@@ -10,9 +5,11 @@ data "scaleway_account_project" "default" {
 
 resource "scaleway_iam_application" "blog" {
   name     = "blog"
+  organization_id = var.organization_id
 }
 
 resource "scaleway_iam_policy" "db_access" {
+  organization_id = var.organization_id
   name           = "my policy"
   description    = "gives app access to serverless database in project"
   application_id = scaleway_iam_application.blog.id
@@ -30,6 +27,7 @@ resource "scaleway_sdb_sql_database" "blog" {
   name     = "blog"
   min_cpu  = 0
   max_cpu  = 1
+  project_id  = var.project_id
 }
 
 output "database_connection_string" {

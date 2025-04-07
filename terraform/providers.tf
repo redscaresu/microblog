@@ -1,6 +1,5 @@
 terraform {
   backend "s3" {
-    bucket = "app-blog"
     key    = "blog.tfstate"
     region = "fr-par"
 
