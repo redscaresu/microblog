@@ -6,13 +6,13 @@ on:
       - ci
     types:
       - completed
-  workflow_dispatch: # Add this to enable manual triggering
+  workflow_dispatch:
  
 env:
  TF_LOG: INFO
- TF_VAR_organization_id: ${{ secrets.TF_VAR_organization_id }} # Pass organization ID to Terraform
- AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }} # Map Scaleway Access Key to AWS env variable
- AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }} # Map Scaleway Secret Key to AWS env variable
+ TF_VAR_organization_id: ${{ secrets.TF_VAR_organization_id }}
+ AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+ AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
  SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
  SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
  BUCKET_TF_STATE: ${{ secrets.BUCKET_TF_STATE }}
