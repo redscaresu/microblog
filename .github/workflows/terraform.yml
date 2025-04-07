@@ -10,6 +10,7 @@ on:
  
 env:
  TF_LOG: INFO
+ TF_VAR_organization_id: ${{ secrets.TF_VAR_organization_id }} # Pass organization ID to Terraform
  AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }} # Map Scaleway Access Key to AWS env variable
  AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }} # Map Scaleway Secret Key to AWS env variable
  SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
