@@ -55,3 +55,9 @@ output "auth_password" {
   sensitive   = true
   description = "The generated random password for the exporter"
 }
+
+resource "scaleway_container_domain" "main" {
+  provider     = scaleway.p2
+  container_id = scaleway_container.main.id
+  hostname     = "ashouri.xyz"
+}
