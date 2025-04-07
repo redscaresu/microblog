@@ -6,8 +6,9 @@ terraform {
 
     skip_credentials_validation = true
     skip_region_validation      = true
-    # Need terraform>=1.6.1
-    skip_requesting_account_id = true
+    skip_requesting_account_id  = true
+    skip_metadata_api_check     = true
+    force_path_style            = true
 
     endpoints = {
       s3 = "https://s3.fr-par.scw.cloud"

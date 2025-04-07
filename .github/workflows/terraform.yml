@@ -3,7 +3,7 @@ name: terraform
 on:
   workflow_run:
     workflows:
-      - ci # Name of the workflow to depend on (from `ci.yaml`)
+      - ci
     types:
       - completed
  
