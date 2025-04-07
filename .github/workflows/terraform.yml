@@ -6,6 +6,7 @@ on:
       - ci
     types:
       - completed
+  workflow_dispatch: # Add this to enable manual triggering
  
 env:
  TF_LOG: INFO
