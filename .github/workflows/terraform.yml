@@ -35,7 +35,7 @@ jobs:
 
       - name: Initialize Terraform
         run: terraform init \
-                 -backend-config="bucket=ashouri.xyz-ahsae9s"
+          -backend-config="bucket=${{ secrets.BUCKET_TF_STATE }}"
 
       - name: Plan Terraform Changes
         run: terraform plan
