@@ -1,7 +1,6 @@
 resource "scaleway_container_namespace" "main" {
   name        = "blog"
   description = "blog"
-  provider    = scaleway.p2
 }
 
 resource "random_password" "auth_password" {
@@ -15,7 +14,6 @@ resource "random_password" "auth_password" {
 }
 
 resource "scaleway_container" "main" {
-  provider       = scaleway.p2
   name           = "blog"
   description    = "my blog"
   namespace_id   = scaleway_container_namespace.main.id
@@ -57,7 +55,6 @@ output "auth_password" {
 }
 
 resource "scaleway_container_domain" "main" {
-  provider     = scaleway.p2
   container_id = scaleway_container.main.id
   hostname     = "ashouri.xyz"
 }
