@@ -1,7 +1,3 @@
-data "scaleway_account_project" "default" {
-  name     = "default"
-}
-
 resource "scaleway_iam_application" "blog" {
   name     = "blog"
 }
