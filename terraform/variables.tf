@@ -4,6 +4,6 @@ variable "organization_id" {
 }
 
 variable "project_id" {
-  description = "The Scaleway organization ID"
+  description = "The Scaleway project ID"
   type        = string
 }
