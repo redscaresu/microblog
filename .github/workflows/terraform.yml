@@ -16,8 +16,8 @@ env:
  # verbosity setting for Terraform logs
  TF_LOG: INFO
  # Credentials for deployment to AWS
- AWS_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
- AWS_SECRET_ACCESS: ${{ secrets.SCW_SECRET_ACCESS }}
+ SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+ SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_ACCESS }}
  # S3 bucket for the Terraform state
  BUCKET_TF_STATE: ${{ secrets.BUCKET_TF_STATE}}
  
