@@ -1,3 +1,13 @@
+variable "organization_id" {
+  description = "The Scaleway organization ID"
+  type        = string
+}
+
+data "scaleway_account_project" "default" {
+  name     = "default"
+  organization_id = var.organization_id
+}
+
 resource "scaleway_iam_application" "blog" {
   name     = "blog"
 }
