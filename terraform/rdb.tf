@@ -41,5 +41,5 @@ output "database_connection_string" {
 
 output "database_id" {
   value     = scaleway_sdb_sql_database.blog.id
-  sensitive = false
+  sensitive = true
 }

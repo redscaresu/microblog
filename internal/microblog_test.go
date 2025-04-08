@@ -213,6 +213,7 @@ func newTestServer(t *testing.T, store repository.PostStore) net.Addr {
 	for err != nil {
 		t.Log("retrying")
 		resp, err = http.Get("http://" + addr)
+		t.Logf("unable to get endpoint, err is %s", err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
