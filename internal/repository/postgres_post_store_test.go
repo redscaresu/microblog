@@ -19,6 +19,10 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
+const (
+	pathToSql = "../../sql/create_tables.sql"
+)
+
 func TestCreateWithContainer(t *testing.T) {
 	store, cleanup := setupTestContainer(t)
 	defer cleanup()
@@ -183,7 +187,7 @@ func setupTestContainer(t *testing.T) (*repository.PostgresStore, func()) {
 
 	psqlInfo := fmt.Sprintf("host=%s port=%s user=postgres password=postgres dbname=testdb sslmode=disable", host, port.Port())
 
-	psstore, err := repository.New(psqlInfo, "../../sql/create_tables.sql")
+	psstore, err := repository.New(psqlInfo, pathToSql)
 	require.NoError(t, err)
 
 	return psstore, cancel
