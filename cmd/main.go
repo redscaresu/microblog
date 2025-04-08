@@ -27,7 +27,34 @@ func run() error {
 		return errors.New("please set AUTH_PASSWORD")
 	}
 
-	psStore, err := repository.New()
+	host := os.Getenv("DB_HOST")
+	if host == "" {
+		return errors.New("please set DB_HOST")
+	}
+
+	port := os.Getenv("DB_PORT")
+	if port == "" {
+		return errors.New("please set DB_PORT")
+	}
+
+	password := os.Getenv("DB_PASSWORD")
+	if password == "" {
+		return errors.New("please set DB_PASSWORD")
+	}
+
+	user := os.Getenv("DB_USER")
+	if user == "" {
+		return errors.New("please set DB_USER")
+	}
+
+	dbName := os.Getenv("DB_NAME")
+	if dbName == "" {
+		return errors.New("please set DB_NAME")
+	}
+
+	psqlInfo := repository.GeneratePSQL(host, port, password, user, dbName)
+
+	psStore, err := repository.New(psqlInfo, "./sql/create_tables.sql")
 	if err != nil {
 		return fmt.Errorf("unable to connect to database due to error: %v", err)
 	}

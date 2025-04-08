@@ -15,23 +15,11 @@ type PostgresStore struct {
 	DB *sql.DB
 }
 
-func New() (*PostgresStore, error) {
+func New(psqlInfo, pathToSQL string) (*PostgresStore, error) {
 
-	host := os.Getenv("DB_HOST")
-	port := os.Getenv("DB_PORT")
-	password := os.Getenv("DB_PASSWORD")
-	user := os.Getenv("DB_USER")
-	dbName := os.Getenv("DB_NAME")
-
-	var psqlInfo string
-	if os.Getenv("LOCAL") == "local" {
-		psqlInfo = fmt.Sprintf("host=%s port=%s user=%s "+
-			"password=%s dbname=%s sslmode=disable",
-			host, port, user, password, dbName)
-	} else {
-		psqlInfo = fmt.Sprintf("host=%s port=%s user=%s "+
-			"password=%s dbname=%s sslmode=require options=databaseid%%3D%s",
-			host, port, user, password, dbName, os.Getenv("DB_ID"))
+	query, err := os.ReadFile(pathToSQL)
+	if err != nil {
+		return nil, err
 	}
 
 	db, err := sql.Open("postgres", psqlInfo)
@@ -43,18 +31,14 @@ func New() (*PostgresStore, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	query, err := os.ReadFile("path/to/database.sql")
-	if err != nil {
-		return nil, err
-	}
+	log.Print("successfully connected!")
 
 	_, err = db.Exec(string(query))
 	if err != nil {
 		return nil, err
 	}
+	log.Print("database successfully seeded!")
 
-	log.Print("Successfully connected!")
 	return &PostgresStore{DB: db}, nil
 }
 
@@ -159,4 +143,19 @@ func (p *PostgresStore) FetchLast10BlogPosts() ([]*models.BlogPost, error) {
 	}
 
 	return blogPosts, nil
+}
+
+func GeneratePSQL(host, port, password, user, dbName string) (psqlInfo string) {
+
+	if os.Getenv("LOCAL") == "local" {
+		psqlInfo = fmt.Sprintf("host=%s port=%s user=%s "+
+			"password=%s dbname=%s sslmode=disable",
+			host, port, user, password, dbName)
+	} else {
+		psqlInfo = fmt.Sprintf("host=%s port=%s user=%s "+
+			"password=%s dbname=%s sslmode=require options=databaseid%%3D%s",
+			host, port, user, password, dbName, os.Getenv("DB_ID"))
+	}
+
+	return psqlInfo
 }

@@ -4,10 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 	"microblog/internal/models"
 	"microblog/internal/repository"
-	"os"
 	"testing"
 	"time"
 
@@ -158,7 +156,6 @@ func TestGetAllError(t *testing.T) {
 
 func setupTestContainer(t *testing.T) (*repository.PostgresStore, func()) {
 	t.Helper()
-
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 
 	req := testcontainers.ContainerRequest{
@@ -184,39 +181,12 @@ func setupTestContainer(t *testing.T) (*repository.PostgresStore, func()) {
 	port, err := container.MappedPort(ctx, "5432")
 	require.NoError(t, err, "failed to map container port")
 
-	dsn := fmt.Sprintf("host=%s port=%s user=postgres password=postgres dbname=testdb sslmode=disable", host, port.Port())
-	db, err := sql.Open("postgres", dsn)
-	require.NoError(t, err, "failed to connect to PostgreSQL database")
+	psqlInfo := fmt.Sprintf("host=%s port=%s user=postgres password=postgres dbname=testdb sslmode=disable", host, port.Port())
 
-	err = db.Ping()
-	require.NoError(t, err, "failed to ping PostgreSQL database")
-
-	log.Println("PostgreSQL container is ready!")
-
-	runSQLScript(t, db, "../../sql/create_tables.sql")
-
-	return &repository.PostgresStore{DB: db}, func() {
-		if err := db.Close(); err != nil {
-			log.Printf("failed to close database connection: %v", err)
-		}
-
-		if err := container.Terminate(ctx); err != nil {
-			log.Printf("failed to terminate container: %v", err)
-		}
-		cancel()
-	}
-}
-
-func runSQLScript(t *testing.T, db *sql.DB, scriptPath string) {
-	t.Helper()
-
-	script, err := os.ReadFile(scriptPath)
+	psstore, err := repository.New(psqlInfo, "../../sql/create_tables.sql")
 	require.NoError(t, err)
 
-	_, err = db.Exec(string(script))
-	require.NoError(t, err)
-
-	log.Println("SQL script executed successfully!")
+	return psstore, cancel
 }
 
 func formattedDate(t *testing.T, now time.Time) string {
