@@ -213,11 +213,10 @@ func newTestServer(t *testing.T, store repository.PostStore) net.Addr {
 	for err != nil {
 		t.Log("retrying")
 		resp, err = http.Get("http://" + addr)
-		require.NoError(t, err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		require.NoError(t, err)
+		t.Fatal("non statusok return", resp.StatusCode)
 	}
 
 	return netListener.Addr()
