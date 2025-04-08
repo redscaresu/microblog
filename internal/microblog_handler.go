@@ -6,7 +6,6 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
-	"log"
 	"microblog/internal/models"
 	"microblog/internal/repository"
 	"net/http"
@@ -27,34 +26,37 @@ var (
 
 const re = `[^a-zA-Z0-9\s]+`
 
-type Application struct {
-	Auth struct {
-		Username string
-		Password string
+func NewApplication(userName, passWord string, postStore repository.PostStore) *Application {
+	return &Application{
+		Auth: &Auth{
+			UserName: userName,
+			Password: passWord,
+		},
+		PostStore: postStore,
 	}
-	Poststore repository.PostStore
+
 }
 
-func ListenAndServe(addr string, app Application) error {
+type Application struct {
+	Auth      *Auth
+	PostStore repository.PostStore
+}
 
-	if app.Auth.Username == "" {
-		log.Fatal("basic auth username must be provided")
-	}
+type Auth struct {
+	UserName string
+	Password string
+}
 
-	if app.Auth.Password == "" {
-		log.Fatal("basic auth password must be provided")
-	}
-
-	customMux := http.NewServeMux()
-	customMux.HandleFunc("/", app.Home)
-	customMux.HandleFunc("/blogpost", app.GetBlogPostByName)
-	customMux.HandleFunc("/getlast5blogposts", app.GetLast10BlogPosts)
-	customMux.HandleFunc("/submit", app.basicAuth(app.Submit))
-	customMux.HandleFunc("/editpost", app.basicAuth(app.EditPostHandler))
-	customMux.HandleFunc("/newpost", app.basicAuth(app.NewPostHandler))
-	customMux.HandleFunc("/updatepost", app.basicAuth(app.UpdatePostHandler))
-	customMux.HandleFunc("/deletepost", app.basicAuth(app.DeletePostHandler))
-	err := http.ListenAndServe(addr, customMux)
+func RegisterRoutes(mux *http.ServeMux, addr string, app *Application) error {
+	mux.HandleFunc("/", app.Home)
+	mux.HandleFunc("/blogpost", app.GetBlogPostByName)
+	mux.HandleFunc("/getlast5blogposts", app.GetLast10BlogPosts)
+	mux.HandleFunc("/submit", app.basicAuth(app.Submit))
+	mux.HandleFunc("/editpost", app.basicAuth(app.EditPostHandler))
+	mux.HandleFunc("/newpost", app.basicAuth(app.NewPostHandler))
+	mux.HandleFunc("/updatepost", app.basicAuth(app.UpdatePostHandler))
+	mux.HandleFunc("/deletepost", app.basicAuth(app.DeletePostHandler))
+	err := http.ListenAndServe(addr, mux)
 	return err
 }
 
@@ -64,7 +66,7 @@ func (app *Application) basicAuth(next http.HandlerFunc) http.HandlerFunc {
 		if ok {
 			usernameHash := sha256.Sum256([]byte(username))
 			passwordHash := sha256.Sum256([]byte(password))
-			expectedUsernameHash := sha256.Sum256([]byte(app.Auth.Username))
+			expectedUsernameHash := sha256.Sum256([]byte(app.Auth.UserName))
 			expectedPasswordHash := sha256.Sum256([]byte(app.Auth.Password))
 
 			usernameMatch := (subtle.ConstantTimeCompare(usernameHash[:], expectedUsernameHash[:]) == 1)
@@ -105,7 +107,7 @@ func (app *Application) EditPostHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	blog, err := app.Poststore.GetByName(name)
+	blog, err := app.PostStore.GetByName(name)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		fmt.Fprint(w, err)
@@ -135,7 +137,7 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	blogPosts, err := app.Poststore.FetchLast10BlogPosts()
+	blogPosts, err := app.PostStore.FetchLast10BlogPosts()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		fmt.Fprint(w, err)
@@ -154,7 +156,7 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 
 func (app *Application) GetLast10BlogPosts(w http.ResponseWriter, r *http.Request) {
 
-	last5Posts, err := app.Poststore.FetchLast10BlogPosts()
+	last5Posts, err := app.PostStore.FetchLast10BlogPosts()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		fmt.Fprint(w, err)
@@ -175,7 +177,7 @@ func (app *Application) GetBlogPostByID(w http.ResponseWriter, r *http.Request) 
 	queryParams := r.URL.Query()
 	id := queryParams.Get("id")
 
-	blog, err := app.Poststore.GetByID(uuid.MustParse(id))
+	blog, err := app.PostStore.GetByID(uuid.MustParse(id))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		fmt.Fprint(w, err)
@@ -196,7 +198,7 @@ func (app *Application) GetBlogPostByName(w http.ResponseWriter, r *http.Request
 	queryParams := r.URL.Query()
 	name := queryParams.Get("name")
 
-	blog, err := app.Poststore.GetByName(name)
+	blog, err := app.PostStore.GetByName(name)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		fmt.Fprint(w, err)
@@ -220,7 +222,7 @@ func (app *Application) GetBlogPostByName(w http.ResponseWriter, r *http.Request
 }
 
 func (app *Application) ReadAllHandler(w http.ResponseWriter, r *http.Request) {
-	posts, err := app.Poststore.GetAll()
+	posts, err := app.PostStore.GetAll()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(w, err)
@@ -268,7 +270,7 @@ func (app *Application) Submit(w http.ResponseWriter, r *http.Request) {
 		FormattedDate: formattedDate(now),
 	}
 
-	err = app.Poststore.Create(newBlogPost)
+	err = app.PostStore.Create(newBlogPost)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -310,7 +312,7 @@ func (app *Application) UpdatePostHandler(w http.ResponseWriter, r *http.Request
 		UpdatedAt: now,
 	}
 
-	err = app.Poststore.Update(newBlogPost)
+	err = app.PostStore.Update(newBlogPost)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -330,7 +332,7 @@ func (app *Application) DeletePostHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	err = app.Poststore.Delete(idUUID)
+	err = app.PostStore.Delete(idUUID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

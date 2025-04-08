@@ -1,10 +1,12 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	microblog "microblog/internal"
 	"microblog/internal/repository"
 	"net"
+	"net/http"
 	"os"
 )
 
@@ -16,28 +18,36 @@ func main() {
 }
 
 func run() error {
-	app := microblog.Application{}
-	psStore, err := repository.New()
-	if err != nil {
-		return err
+
+	if os.Getenv("AUTH_USERNAME") == "" {
+		return errors.New("please set AUTH_USERNAME")
 	}
 
-	app.Poststore = psStore
+	if os.Getenv("AUTH_PASSWORD") == "" {
+		return errors.New("please set AUTH_PASSWORD")
+	}
+
+	psStore, err := repository.New()
+	if err != nil {
+		return fmt.Errorf("unable to connect to database due to error: %v", err)
+	}
+
+	app := microblog.NewApplication(os.Getenv("AUTH_USERNAME"),
+		os.Getenv("AUTH_PASSWORD"),
+		psStore)
 
 	netListener, err := net.Listen("tcp", ":8080")
 	addr := netListener.Addr().String()
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to listen due to error: %v", err)
 	}
-
 	netListener.Close()
 
-	app.Auth.Username = os.Getenv("AUTH_USERNAME")
-	app.Auth.Password = os.Getenv("AUTH_PASSWORD")
+	serveMux := http.NewServeMux()
 
-	err = microblog.ListenAndServe(addr, app)
+	err = microblog.RegisterRoutes(serveMux, addr, app)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to register handlers due to error: %v", err)
 	}
 
 	return nil

@@ -44,7 +44,7 @@ func TestSubmitHandler(t *testing.T) {
 	t.Parallel()
 
 	store := &repository.MemoryPostStore{}
-	app := &microblog.Application{Poststore: store}
+	app := &microblog.Application{PostStore: store}
 
 	server := httptest.NewServer(http.HandlerFunc(app.Submit))
 	defer server.Close()
@@ -79,7 +79,7 @@ func TestUpdatePostHandler(t *testing.T) {
 	t.Parallel()
 
 	store := &repository.MemoryPostStore{}
-	app := &microblog.Application{Poststore: store}
+	app := &microblog.Application{PostStore: store}
 
 	submitServer := httptest.NewServer(http.HandlerFunc(app.Submit))
 	defer submitServer.Close()
@@ -197,40 +197,27 @@ func newTestServer(t *testing.T, store repository.PostStore) net.Addr {
 	t.Helper()
 
 	netListener, err := net.Listen("tcp", "127.0.0.1:")
+	require.NoError(t, err)
 	addr := netListener.Addr().String()
-
-	if err != nil {
-		t.Fatal(err)
-	}
 	netListener.Close()
 
+	mux := http.NewServeMux()
 	go func() {
-		err := microblog.ListenAndServe(addr,
-			microblog.Application{
-				Auth: struct {
-					Username string
-					Password string
-				}{
-					Username: "foo",
-					Password: "foo",
-				},
-				Poststore: store,
-			},
-		)
-		if err != nil {
-			panic(err)
-		}
+		err := microblog.RegisterRoutes(mux,
+			addr,
+			microblog.NewApplication("foo", "foo", store))
+		require.NoError(t, err)
 	}()
 
 	resp, err := http.Get("http:" + addr)
-
 	for err != nil {
 		t.Log("retrying")
 		resp, err = http.Get("http://" + addr)
+		require.NoError(t, err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		t.Fatal(resp.StatusCode)
+		require.NoError(t, err)
 	}
 
 	return netListener.Addr()
