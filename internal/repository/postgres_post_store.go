@@ -33,6 +33,7 @@ func New() (*PostgresStore, error) {
 			"password=%s dbname=%s sslmode=require options=databaseid%%3D%s",
 			host, port, user, password, dbName, os.Getenv("DB_ID"))
 	}
+
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
 		return nil, err
@@ -43,20 +44,14 @@ func New() (*PostgresStore, error) {
 		return nil, err
 	}
 
-	_, err = db.Exec(`
-    CREATE TABLE IF NOT EXISTS blog (
-		blog_id uuid NOT NULL,
-		blog_title TEXT NOT NULL,
-		blog_post TEXT NOT NULL,
-		blog_name character varying(255) NOT NULL,
-		formatted_date character varying(255) NOT NULL, 
-		created_at TIMESTAMPTZ,
-		updated_at TIMESTAMPTZ,
-		PRIMARY KEY (blog_id)
-    )
-	`)
+	query, err := os.ReadFile("path/to/database.sql")
 	if err != nil {
-		return nil, fmt.Errorf("failed to create table: %w", err)
+		return nil, err
+	}
+
+	_, err = db.Exec(string(query))
+	if err != nil {
+		return nil, err
 	}
 
 	log.Print("Successfully connected!")
