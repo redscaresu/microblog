@@ -26,6 +26,16 @@ var (
 
 const re = `[^a-zA-Z0-9\s]+`
 
+type Application struct {
+	Auth      *Auth
+	PostStore repository.PostStore
+}
+
+type Auth struct {
+	UserName string
+	Password string
+}
+
 func NewApplication(userName, passWord string, postStore repository.PostStore) *Application {
 	return &Application{
 		Auth: &Auth{
@@ -35,16 +45,6 @@ func NewApplication(userName, passWord string, postStore repository.PostStore) *
 		PostStore: postStore,
 	}
 
-}
-
-type Application struct {
-	Auth      *Auth
-	PostStore repository.PostStore
-}
-
-type Auth struct {
-	UserName string
-	Password string
 }
 
 func RegisterRoutes(mux *http.ServeMux, addr string, app *Application) error {
