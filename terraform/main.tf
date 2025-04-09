@@ -49,13 +49,13 @@ resource "scaleway_container" "main" {
   }
 }
 
+resource "scaleway_container_domain" "main" {
+  container_id = scaleway_container.main.id
+  hostname     = "ashouri.xyz"
+}
+
 output "auth_password" {
   value       = random_password.auth_password.result
   sensitive   = true
   description = "The generated random password for the exporter"
-}
-
-resource "scaleway_container_domain" "main" {
-  container_id = scaleway_container.main.id
-  hostname     = "ashouri.xyz"
 }
