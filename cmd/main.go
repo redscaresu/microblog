@@ -3,7 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
-	microblog "microblog/internal"
+	"microblog/internal/handlers"
 	"microblog/internal/repository"
 	"net"
 	"net/http"
@@ -59,7 +59,7 @@ func run() error {
 		return fmt.Errorf("unable to connect to database due to error: %v", err)
 	}
 
-	app := microblog.NewApplication(os.Getenv("AUTH_USERNAME"),
+	app := handlers.NewApplication(os.Getenv("AUTH_USERNAME"),
 		os.Getenv("AUTH_PASSWORD"),
 		psStore)
 
@@ -72,7 +72,7 @@ func run() error {
 
 	serveMux := http.NewServeMux()
 
-	err = microblog.RegisterRoutes(serveMux, addr, app)
+	err = handlers.RegisterRoutes(serveMux, addr, app)
 	if err != nil {
 		return fmt.Errorf("unable to register handlers due to error: %v", err)
 	}

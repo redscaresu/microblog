@@ -1,10 +1,10 @@
-package microblog_test
+package handlers_test
 
 import (
 	"encoding/json"
 	"fmt"
 	"io"
-	microblog "microblog/internal"
+	"microblog/internal/handlers"
 	"microblog/internal/models"
 	"microblog/internal/repository"
 	"net"
@@ -44,7 +44,7 @@ func TestSubmitHandler(t *testing.T) {
 	t.Parallel()
 
 	store := &repository.MemoryPostStore{}
-	app := &microblog.Application{PostStore: store}
+	app := &handlers.Application{PostStore: store}
 
 	server := httptest.NewServer(http.HandlerFunc(app.Submit))
 	defer server.Close()
@@ -79,7 +79,7 @@ func TestUpdatePostHandler(t *testing.T) {
 	t.Parallel()
 
 	store := &repository.MemoryPostStore{}
-	app := &microblog.Application{PostStore: store}
+	app := &handlers.Application{PostStore: store}
 
 	submitServer := httptest.NewServer(http.HandlerFunc(app.Submit))
 	defer submitServer.Close()
@@ -174,9 +174,9 @@ func TestSubmitHandlerBasicAuthError(t *testing.T) {
 
 func TestIsAuthenticatedWhenCorrectPasswordProvidedReturnsTrue(t *testing.T) {
 
-	t.Setenv(microblog.MicroblogToken, "password123")
+	t.Setenv(handlers.MicroblogToken, "password123")
 
-	got := microblog.IsAuthenticated("password123")
+	got := handlers.IsAuthenticated("password123")
 	want := true
 
 	assert.Equal(t, want, got)
@@ -184,9 +184,9 @@ func TestIsAuthenticatedWhenCorrectPasswordProvidedReturnsTrue(t *testing.T) {
 
 func TestIsAuthenticatedReturnsFalseWhenIncorrectPasswordProvided(t *testing.T) {
 
-	t.Setenv(microblog.MicroblogToken, "password123")
+	t.Setenv(handlers.MicroblogToken, "password123")
 
-	got := microblog.IsAuthenticated("hotdog")
+	got := handlers.IsAuthenticated("hotdog")
 	want := false
 
 	assert.Equal(t, want, got)
@@ -203,9 +203,9 @@ func newTestServer(t *testing.T, store repository.PostStore) net.Addr {
 
 	mux := http.NewServeMux()
 	go func() {
-		err := microblog.RegisterRoutes(mux,
+		err := handlers.RegisterRoutes(mux,
 			addr,
-			microblog.NewApplication("foo", "foo", store))
+			handlers.NewApplication("foo", "foo", store))
 		require.NoError(t, err)
 	}()
 

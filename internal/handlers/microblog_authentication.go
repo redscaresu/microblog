@@ -1,4 +1,4 @@
-package microblog
+package handlers
 
 import (
 	"os"
