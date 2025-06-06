@@ -269,10 +269,6 @@ func (app *Application) Submit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Debug: Log the original lengths
-	fmt.Printf("Original content length: %d\n", len(content))
-	fmt.Printf("Original content: %s\n", content[:min(len(content), 100)]) // First 100 chars
-
 	ID := uuid.New()
 
 	titleCopy := title
