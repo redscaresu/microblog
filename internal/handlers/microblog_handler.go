@@ -7,6 +7,7 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
+	"log"
 	"microblog/internal/models"
 	"microblog/internal/repository"
 	"net/http"
@@ -112,15 +113,15 @@ func (app *Application) basicAuth(next http.HandlerFunc) http.HandlerFunc {
 func (app *Application) NewPostHandler(w http.ResponseWriter, r *http.Request) {
 	tpl, err := texttemplate.ParseFS(templates, "templates/newpost.gohtml")
 	if err != nil {
+		log.Printf("Failed to load template: %v", err)
 		http.Error(w, "Failed to load template", http.StatusInternalServerError)
-		fmt.Fprint(w, err)
 		return
 	}
 
 	err = tpl.Execute(w, nil)
 	if err != nil {
+		log.Printf("Failed to render template: %v", err)
 		http.Error(w, "Failed to render template", http.StatusInternalServerError)
-		fmt.Fprint(w, err)
 		return
 	}
 }
@@ -135,22 +136,22 @@ func (app *Application) EditPostHandler(w http.ResponseWriter, r *http.Request) 
 
 	blog, err := app.PostStore.GetByName(name)
 	if err != nil {
+		log.Printf("Error getting post by name %s: %v", name, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		fmt.Fprint(w, err)
 		return
 	}
 
 	tpl, err := texttemplate.ParseFS(templates, "templates/editpost.gohtml")
 	if err != nil {
+		log.Printf("Error parsing editpost.gohtml template: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		fmt.Fprint(w, err)
 		return
 	}
 
 	err = tpl.Execute(w, blog)
 	if err != nil {
+		log.Printf("Error executing editpost.gohtml template: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		fmt.Fprint(w, err)
 		return
 	}
 }
@@ -158,15 +159,15 @@ func (app *Application) EditPostHandler(w http.ResponseWriter, r *http.Request) 
 func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 	tpl, err := texttemplate.ParseFS(templates, "templates/home.gohtml")
 	if err != nil {
+		log.Printf("Error parsing home.gohtml template: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		fmt.Fprint(w, err)
 		return
 	}
 
 	blogPosts, err := app.PostStore.FetchLast10BlogPosts()
 	if err != nil {
+		log.Printf("Error fetching last 10 blog posts: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		fmt.Fprint(w, err)
 		return
 	}
 
@@ -174,8 +175,8 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 
 	err = tpl.Execute(w, normalizedBlogPost)
 	if err != nil {
+		log.Printf("Error executing home.gohtml template: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		fmt.Fprint(w, err)
 		return
 	}
 }
@@ -184,14 +185,14 @@ func (app *Application) GetLast10BlogPosts(w http.ResponseWriter, r *http.Reques
 
 	last5Posts, err := app.PostStore.FetchLast10BlogPosts()
 	if err != nil {
+		log.Printf("Error fetching last 10 blog posts: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		fmt.Fprint(w, err)
 		return
 	}
 	resp, err := json.Marshal(last5Posts)
 	if err != nil {
+		log.Printf("Error marshalling last 10 blog posts: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		fmt.Fprint(w, err)
 		return
 	}
 
@@ -205,14 +206,14 @@ func (app *Application) GetBlogPostByID(w http.ResponseWriter, r *http.Request) 
 
 	blog, err := app.PostStore.GetByID(uuid.MustParse(id))
 	if err != nil {
+		log.Printf("Error getting blog post by ID %s: %v", id, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		fmt.Fprint(w, err)
 		return
 	}
 	resp, err := json.Marshal(blog)
 	if err != nil {
+		log.Printf("Error marshalling blog post ID %s: %v", id, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		fmt.Fprint(w, err)
 		return
 	}
 
@@ -225,26 +226,28 @@ func (app *Application) GetBlogPostByName(w http.ResponseWriter, r *http.Request
 
 	blog, err := app.PostStore.GetByName(name)
 	if err != nil {
+		log.Printf("Error getting blog post by name %s: %v", name, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		fmt.Fprint(w, err)
 		return
 	}
 
-	fmt.Println("Original Content:", blog.Content)
+	log.Printf("Original Content for %s: %s", name, blog.Content)
 
 	blog.Content = RenderMarkdown(blog.Content)
 	blog.Title = RenderMarkdown(blog.Title)
 
-	fmt.Println("Processed Content:", blog.Content)
+	log.Printf("Processed Content for %s: %s", name, blog.Content)
 
 	tpl, err := texttemplate.New("blogpost.gohtml").Funcs(funcMap).ParseFS(templates, "templates/blogpost.gohtml")
 	if err != nil {
+		log.Printf("Error parsing blogpost.gohtml template: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	err = tpl.Execute(w, blog)
 	if err != nil {
+		log.Printf("Error executing blogpost.gohtml template: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -291,12 +294,14 @@ func (app *Application) Submit(w http.ResponseWriter, r *http.Request) {
 
 	err = app.PostStore.Create(newBlogPost)
 	if err != nil {
+		log.Printf("Error creating post: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	err = json.NewEncoder(w).Encode(newBlogPost)
 	if err != nil {
+		log.Printf("Error encoding new blog post: %v", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -307,6 +312,7 @@ func (app *Application) Submit(w http.ResponseWriter, r *http.Request) {
 func (app *Application) UpdatePostHandler(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
+		log.Printf("Unable to parse form: %v", err)
 		http.Error(w, "Unable to parse form", http.StatusBadRequest)
 		return
 	}
@@ -315,10 +321,11 @@ func (app *Application) UpdatePostHandler(w http.ResponseWriter, r *http.Request
 	title := r.FormValue("title")
 	content := r.FormValue("content")
 
-	fmt.Printf("ID: %s, Title: %s, Content: %s\n", id, title, content)
+	log.Printf("Updating Post - ID: %s, Title: %s, Content: %s\n", id, title, content)
 
 	idUUID, err := uuid.Parse(id)
 	if err != nil {
+		log.Printf("Invalid ID for update: %s, error: %v", id, err)
 		http.Error(w, "Invalid ID", http.StatusBadRequest)
 		return
 	}
@@ -333,6 +340,7 @@ func (app *Application) UpdatePostHandler(w http.ResponseWriter, r *http.Request
 
 	err = app.PostStore.Update(newBlogPost)
 	if err != nil {
+		log.Printf("Error updating post ID %s: %v", id, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -347,12 +355,14 @@ func (app *Application) DeletePostHandler(w http.ResponseWriter, r *http.Request
 
 	idUUID, err := uuid.Parse(id)
 	if err != nil {
+		log.Printf("Invalid ID for delete: %s, error: %v", id, err)
 		http.Error(w, "Invalid ID", http.StatusBadRequest)
 		return
 	}
 
 	err = app.PostStore.Delete(idUUID)
 	if err != nil {
+		log.Printf("Error deleting post ID %s: %v", id, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -365,14 +375,14 @@ func normalizeBlogPost(blogPost []*models.BlogPost) []*models.BlogPost {
 	for i := range blogPost {
 		var contentBuf bytes.Buffer
 		if err := md.Convert([]byte(blogPost[i].Content), &contentBuf); err != nil {
-			fmt.Printf("Error converting blog post content to HTML: %v\n", err)
+			log.Printf("Error converting blog post content to HTML: %v\n", err)
 		} else {
 			blogPost[i].Content = contentBuf.String()
 		}
 
 		var titleBuf bytes.Buffer
 		if err := md.Convert([]byte(blogPost[i].Title), &titleBuf); err != nil {
-			fmt.Printf("Error converting blog post title to HTML: %v\n", err)
+			log.Printf("Error converting blog post title to HTML: %v\n", err)
 		} else {
 			blogPost[i].Title = titleBuf.String()
 		}
@@ -393,15 +403,15 @@ func formattedDate(now time.Time) string {
 func RenderMarkdown(content string) string {
 	var buf bytes.Buffer
 	if err := md.Convert([]byte(content), &buf); err != nil {
-		fmt.Println("Error converting markdown to HTML:", err)
+		log.Printf("Error converting markdown to HTML: %v", err)
 		return content
 	}
 	parsedContent := buf.String()
 
-	fmt.Println("=== MARKDOWN DEBUG ===")
-	fmt.Println("Input:", content)
-	fmt.Println("Output:", parsedContent)
-	fmt.Println("======================")
+	log.Println("=== MARKDOWN DEBUG ===")
+	log.Println("Input:", content)
+	log.Println("Output:", parsedContent)
+	log.Println("======================")
 
 	return parsedContent
 }
