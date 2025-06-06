@@ -18,6 +18,30 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestMarkdown(t *testing.T) {
+	input := `> This is a test blockquote`
+	output := handlers.RenderMarkdown(input)
+	fmt.Println("Test Input:", input)
+	fmt.Println("Test Output:", output)
+	// Should output: <blockquote><p>This is a test blockquote</p></blockquote>
+}
+
+func TestMarkdownAgain(t *testing.T) {
+	input := `> "What has been will be again,
+> what has been done will be done again;
+> there is nothing new under the sun."
+
+Can the past provide us with a lens with which to understand the present in terms of what the impact of AI tooling will have on software development?
+
+I read this article, which I think articulates perfectly the skepticism software engineers have towards AI coding assistants.`
+
+	output := handlers.RenderMarkdown(input)
+	fmt.Println("=== ACTUAL CONTENT TEST ===")
+	fmt.Println("Input:", input)
+	fmt.Println("Output:", output)
+	fmt.Println("===========================")
+}
+
 func TestListenAndServe_UsesGivenStore(t *testing.T) {
 	t.Parallel()
 

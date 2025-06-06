@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ashouri.tech</title>
+    <title>{{.Title}}</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -13,15 +13,28 @@
             padding: 0;
         }
 
-        .blog-post {
-            padding: 10px 0;
-            text-align: center;
+        .container {
+            max-width: 800px; /* Limit the width of the content */
+            margin: 40px auto; /* Center the content and add vertical spacing */
+            padding: 20px; /* Add padding inside the container */
+            background-color: #1b263b; /* Slightly lighter background for contrast */
+            border-radius: 8px; /* Rounded corners for a modern look */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow for depth */
         }
 
         h1 {
             text-align: center;
             margin-top: 20px;
             color: #e94560; /* Accent color for the title */
+        }
+
+        blockquote {
+            margin: 20px 0; /* Add vertical spacing */
+            padding: 10px 20px; /* Add padding inside the blockquote */
+            border-left: 4px solid #e94560; /* Add a colored border to the left */
+            background-color: #2e3b4e; /* Slightly darker background for contrast */
+            color: #ffffff; /* White text color */
+            font-style: italic; /* Italicize the text */
         }
 
         a {
@@ -35,6 +48,7 @@
 
         p {
             color: #ffffff; /* White text color for paragraphs */
+            line-height: 1.8; /* Improve readability with increased line height */
         }
 
         .back-link {
@@ -48,12 +62,12 @@
         <a href="/">← Back to Home</a> <!-- Link to the homepage -->
     </div>
 
-    <h1>{{.Title}}</h1>
+    <div class="container">
+        <h1>{{.Title}}</h1>
 
-    <div class="body">
         <div class="blog-post" id="blog-post-container">
             <!-- Blog post content will be displayed here -->
-            <p>{{.Content}}</p>
+            {{.Content | safeHTML}}
         </div>
     </div>
 </body>

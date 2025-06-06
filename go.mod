@@ -7,9 +7,9 @@ require github.com/google/uuid v1.6.0
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/lib/pq v1.10.7
-	github.com/russross/blackfriday/v2 v2.1.0
 	github.com/stretchr/testify v1.10.0
 	github.com/testcontainers/testcontainers-go v0.36.0
+	github.com/yuin/goldmark v1.2.1
 )
 
 require (

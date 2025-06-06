@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"crypto/subtle"
 	"embed"
@@ -13,16 +14,41 @@ import (
 	"strings"
 	"time"
 
-	"text/template"
+	htmltemplate "html/template"
+	texttemplate "text/template"
 
 	"github.com/google/uuid"
-	"github.com/russross/blackfriday/v2"
+	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark/extension"
+	"github.com/yuin/goldmark/parser"
+	"github.com/yuin/goldmark/renderer/html"
 )
 
 var (
 	//go:embed templates/*
 	templates embed.FS
+	md        goldmark.Markdown
 )
+
+func init() {
+	md = goldmark.New(
+		goldmark.WithExtensions(extension.GFM),
+		goldmark.WithParserOptions(
+			parser.WithAutoHeadingID(),
+		),
+		goldmark.WithRendererOptions(
+			html.WithHardWraps(),
+			html.WithXHTML(),
+			html.WithUnsafe(), // Allows raw HTML, similar to blackfriday's behavior with CommonExtensions
+		),
+	)
+}
+
+var funcMap = texttemplate.FuncMap{
+	"safeHTML": func(s string) htmltemplate.HTML {
+		return htmltemplate.HTML(s)
+	},
+}
 
 const re = `[^a-zA-Z0-9\s]+`
 
@@ -84,7 +110,7 @@ func (app *Application) basicAuth(next http.HandlerFunc) http.HandlerFunc {
 }
 
 func (app *Application) NewPostHandler(w http.ResponseWriter, r *http.Request) {
-	tpl, err := template.ParseFS(templates, "templates/newpost.gohtml")
+	tpl, err := texttemplate.ParseFS(templates, "templates/newpost.gohtml")
 	if err != nil {
 		http.Error(w, "Failed to load template", http.StatusInternalServerError)
 		fmt.Fprint(w, err)
@@ -114,7 +140,7 @@ func (app *Application) EditPostHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	tpl, err := template.ParseFS(templates, "templates/editpost.gohtml")
+	tpl, err := texttemplate.ParseFS(templates, "templates/editpost.gohtml")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		fmt.Fprint(w, err)
@@ -130,7 +156,7 @@ func (app *Application) EditPostHandler(w http.ResponseWriter, r *http.Request) 
 }
 
 func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
-	tpl, err := template.ParseFS(templates, "templates/home.gohtml")
+	tpl, err := texttemplate.ParseFS(templates, "templates/home.gohtml")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		fmt.Fprint(w, err)
@@ -194,7 +220,6 @@ func (app *Application) GetBlogPostByID(w http.ResponseWriter, r *http.Request) 
 }
 
 func (app *Application) GetBlogPostByName(w http.ResponseWriter, r *http.Request) {
-
 	queryParams := r.URL.Query()
 	name := queryParams.Get("name")
 
@@ -205,10 +230,16 @@ func (app *Application) GetBlogPostByName(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	blog.Content = string(blackfriday.Run([]byte(blog.Content)))
-	blog.Title = string(blackfriday.Run([]byte(blog.Title)))
+	// Debug: Log the original content
+	fmt.Println("Original Content:", blog.Content)
 
-	tpl, err := template.ParseFS(templates, "templates/blogpost.gohtml")
+	blog.Content = RenderMarkdown(blog.Content)
+	blog.Title = RenderMarkdown(blog.Title)
+
+	// Debug: Log the processed content
+	fmt.Println("Processed Content:", blog.Content)
+
+	tpl, err := texttemplate.New("blogpost.gohtml").Funcs(funcMap).ParseFS(templates, "templates/blogpost.gohtml")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -219,16 +250,6 @@ func (app *Application) GetBlogPostByName(w http.ResponseWriter, r *http.Request
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-}
-
-func (app *Application) ReadAllHandler(w http.ResponseWriter, r *http.Request) {
-	posts, err := app.PostStore.GetAll()
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(w, err)
-		return
-	}
-	fmt.Fprint(w, posts)
 }
 
 func (app *Application) Submit(w http.ResponseWriter, r *http.Request) {
@@ -249,6 +270,10 @@ func (app *Application) Submit(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Content is empty", http.StatusBadRequest)
 		return
 	}
+
+	// Debug: Log the original lengths
+	fmt.Printf("Original content length: %d\n", len(content))
+	fmt.Printf("Original content: %s\n", content[:min(len(content), 100)]) // First 100 chars
 
 	ID := uuid.New()
 
@@ -344,8 +369,21 @@ func (app *Application) DeletePostHandler(w http.ResponseWriter, r *http.Request
 func normalizeBlogPost(blogPost []*models.BlogPost) []*models.BlogPost {
 	preview := 20
 	for i := range blogPost {
-		blogPost[i].Content = string(blackfriday.Run([]byte(blogPost[i].Content)))
-		blogPost[i].Title = string(blackfriday.Run([]byte(blogPost[i].Title)))
+		var contentBuf bytes.Buffer
+		if err := md.Convert([]byte(blogPost[i].Content), &contentBuf); err != nil {
+			fmt.Printf("Error converting blog post content to HTML: %v\n", err)
+			// Keep original content or handle error as appropriate
+		} else {
+			blogPost[i].Content = contentBuf.String()
+		}
+
+		var titleBuf bytes.Buffer
+		if err := md.Convert([]byte(blogPost[i].Title), &titleBuf); err != nil {
+			fmt.Printf("Error converting blog post title to HTML: %v\n", err)
+			// Keep original title or handle error as appropriate
+		} else {
+			blogPost[i].Title = titleBuf.String()
+		}
 	}
 
 	for i := range blogPost {
@@ -358,4 +396,23 @@ func normalizeBlogPost(blogPost []*models.BlogPost) []*models.BlogPost {
 
 func formattedDate(now time.Time) string {
 	return fmt.Sprintf("%s %d, %d", now.Month().String(), now.Day(), now.Year())
+}
+
+func RenderMarkdown(content string) string {
+	var buf bytes.Buffer
+	if err := md.Convert([]byte(content), &buf); err != nil {
+		fmt.Println("Error converting markdown to HTML:", err)
+		// In case of error, return the original content or an error message
+		// For simplicity, returning original content here.
+		return content
+	}
+	parsedContent := buf.String()
+
+	// Debug: Log both input and output
+	fmt.Println("=== MARKDOWN DEBUG ===")
+	fmt.Println("Input:", content)
+	fmt.Println("Output:", parsedContent)
+	fmt.Println("======================")
+
+	return parsedContent
 }
