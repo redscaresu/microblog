@@ -39,7 +39,7 @@ func init() {
 		goldmark.WithRendererOptions(
 			html.WithHardWraps(),
 			html.WithXHTML(),
-			html.WithUnsafe(), // Allows raw HTML, similar to blackfriday's behavior with CommonExtensions
+			html.WithUnsafe(),
 		),
 	)
 }
@@ -367,12 +367,11 @@ func (app *Application) DeletePostHandler(w http.ResponseWriter, r *http.Request
 }
 
 func normalizeBlogPost(blogPost []*models.BlogPost) []*models.BlogPost {
-	preview := 20
+	preview := 300
 	for i := range blogPost {
 		var contentBuf bytes.Buffer
 		if err := md.Convert([]byte(blogPost[i].Content), &contentBuf); err != nil {
 			fmt.Printf("Error converting blog post content to HTML: %v\n", err)
-			// Keep original content or handle error as appropriate
 		} else {
 			blogPost[i].Content = contentBuf.String()
 		}
@@ -380,7 +379,6 @@ func normalizeBlogPost(blogPost []*models.BlogPost) []*models.BlogPost {
 		var titleBuf bytes.Buffer
 		if err := md.Convert([]byte(blogPost[i].Title), &titleBuf); err != nil {
 			fmt.Printf("Error converting blog post title to HTML: %v\n", err)
-			// Keep original title or handle error as appropriate
 		} else {
 			blogPost[i].Title = titleBuf.String()
 		}
@@ -402,8 +400,6 @@ func RenderMarkdown(content string) string {
 	var buf bytes.Buffer
 	if err := md.Convert([]byte(content), &buf); err != nil {
 		fmt.Println("Error converting markdown to HTML:", err)
-		// In case of error, return the original content or an error message
-		// For simplicity, returning original content here.
 		return content
 	}
 	parsedContent := buf.String()
