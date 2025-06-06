@@ -230,13 +230,11 @@ func (app *Application) GetBlogPostByName(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// Debug: Log the original content
 	fmt.Println("Original Content:", blog.Content)
 
 	blog.Content = RenderMarkdown(blog.Content)
 	blog.Title = RenderMarkdown(blog.Title)
 
-	// Debug: Log the processed content
 	fmt.Println("Processed Content:", blog.Content)
 
 	tpl, err := texttemplate.New("blogpost.gohtml").Funcs(funcMap).ParseFS(templates, "templates/blogpost.gohtml")
@@ -404,7 +402,6 @@ func RenderMarkdown(content string) string {
 	}
 	parsedContent := buf.String()
 
-	// Debug: Log both input and output
 	fmt.Println("=== MARKDOWN DEBUG ===")
 	fmt.Println("Input:", content)
 	fmt.Println("Output:", parsedContent)
