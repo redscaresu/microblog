@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"microblog/internal/handlers"
+	"microblog/internal/models"
 	"microblog/internal/repository"
 	"net"
 	"net/http"
@@ -61,7 +62,8 @@ func run() error {
 
 	app := handlers.NewApplication(os.Getenv("AUTH_USERNAME"),
 		os.Getenv("AUTH_PASSWORD"),
-		psStore)
+		psStore,
+		[]*models.BlogPost{})
 
 	netListener, err := net.Listen("tcp", ":8080")
 	addr := netListener.Addr().String()

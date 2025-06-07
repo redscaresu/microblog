@@ -229,7 +229,7 @@ func newTestServer(t *testing.T, store repository.PostStore) net.Addr {
 	go func() {
 		err := handlers.RegisterRoutes(mux,
 			addr,
-			handlers.NewApplication("foo", "foo", store))
+			handlers.NewApplication("foo", "foo", store, []*models.BlogPost{}))
 		require.NoError(t, err)
 	}()
 

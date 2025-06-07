@@ -56,6 +56,7 @@ const re = `[^a-zA-Z0-9\s]+`
 type Application struct {
 	Auth      *Auth
 	PostStore repository.PostStore
+	Cache     []*models.BlogPost
 }
 
 type Auth struct {
@@ -63,13 +64,14 @@ type Auth struct {
 	Password string
 }
 
-func NewApplication(userName, passWord string, postStore repository.PostStore) *Application {
+func NewApplication(userName, passWord string, postStore repository.PostStore, cache []*models.BlogPost) *Application {
 	return &Application{
 		Auth: &Auth{
 			UserName: userName,
 			Password: passWord,
 		},
 		PostStore: postStore,
+		Cache:     cache,
 	}
 
 }
@@ -77,12 +79,12 @@ func NewApplication(userName, passWord string, postStore repository.PostStore) *
 func RegisterRoutes(mux *http.ServeMux, addr string, app *Application) error {
 	mux.HandleFunc("/", app.Home)
 	mux.HandleFunc("/blogpost", app.GetBlogPostByName)
-	mux.HandleFunc("/getlast5blogposts", app.GetLast10BlogPosts)
 	mux.HandleFunc("/submit", app.basicAuth(app.Submit))
 	mux.HandleFunc("/editpost", app.basicAuth(app.EditPostHandler))
 	mux.HandleFunc("/newpost", app.basicAuth(app.NewPostHandler))
 	mux.HandleFunc("/updatepost", app.basicAuth(app.UpdatePostHandler))
 	mux.HandleFunc("/deletepost", app.basicAuth(app.DeletePostHandler))
+	mux.HandleFunc("/rebuildcache", app.basicAuth(app.RebuildCacheHandler))
 	err := http.ListenAndServe(addr, mux)
 	return err
 }
@@ -164,11 +166,19 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	blogPosts, err := app.PostStore.FetchLast10BlogPosts()
-	if err != nil {
-		log.Printf("Error fetching last 10 blog posts: %v", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	var blogPosts []*models.BlogPost
+	fmt.Println(app.Cache)
+	if len(app.Cache) < 1 {
+		fmt.Println("do i go here")
+		blogPosts, err = app.PostStore.FetchLast10BlogPosts()
+		if err != nil {
+			log.Printf("Error fetching last 10 blog posts: %v", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	} else {
+		fmt.Println("am i going here")
+		blogPosts = app.Cache
 	}
 
 	normalizedBlogPost := normalizeBlogPost(blogPosts)
@@ -179,24 +189,6 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-}
-
-func (app *Application) GetLast10BlogPosts(w http.ResponseWriter, r *http.Request) {
-
-	last5Posts, err := app.PostStore.FetchLast10BlogPosts()
-	if err != nil {
-		log.Printf("Error fetching last 10 blog posts: %v", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	resp, err := json.Marshal(last5Posts)
-	if err != nil {
-		log.Printf("Error marshalling last 10 blog posts: %v", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	fmt.Fprint(w, string(resp))
 }
 
 func (app *Application) GetBlogPostByID(w http.ResponseWriter, r *http.Request) {
@@ -299,6 +291,14 @@ func (app *Application) Submit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	blogPosts, err := app.PostStore.FetchLast10BlogPosts()
+	if err != nil {
+		log.Printf("Error fetching last 10 blog posts: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	app.Cache = blogPosts
+
 	err = json.NewEncoder(w).Encode(newBlogPost)
 	if err != nil {
 		log.Printf("Error encoding new blog post: %v", err)
@@ -345,6 +345,15 @@ func (app *Application) UpdatePostHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	blogPosts, err := app.PostStore.FetchLast10BlogPosts()
+	if err != nil {
+		log.Printf("Error fetching last 10 blog posts: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	app.Cache = append(app.Cache, blogPosts...)
+	fmt.Fprintf(w, "Cache updated successfully!")
 	fmt.Fprintf(w, "Post updated successfully!")
 }
 
@@ -368,6 +377,19 @@ func (app *Application) DeletePostHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	fmt.Fprintf(w, "Post deleted successfully!")
+}
+
+func (app *Application) RebuildCacheHandler(w http.ResponseWriter, r *http.Request) {
+	app.Cache = app.Cache[:0]
+
+	blogPosts, err := app.PostStore.FetchLast10BlogPosts()
+	if err != nil {
+		log.Printf("Error fetching last 10 blog posts: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	app.Cache = append(app.Cache, blogPosts...)
 }
 
 func normalizeBlogPost(blogPost []*models.BlogPost) []*models.BlogPost {
