@@ -77,7 +77,6 @@ func NewApplication(userName, passWord string, postStore repository.PostStore) *
 func RegisterRoutes(mux *http.ServeMux, addr string, app *Application) error {
 	mux.HandleFunc("/", app.Home)
 	mux.HandleFunc("/blogpost", app.GetBlogPostByName)
-	mux.HandleFunc("/getlast5blogposts", app.GetLast10BlogPosts)
 	mux.HandleFunc("/submit", app.basicAuth(app.Submit))
 	mux.HandleFunc("/editpost", app.basicAuth(app.EditPostHandler))
 	mux.HandleFunc("/newpost", app.basicAuth(app.NewPostHandler))
@@ -179,24 +178,6 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-}
-
-func (app *Application) GetLast10BlogPosts(w http.ResponseWriter, r *http.Request) {
-
-	last5Posts, err := app.PostStore.FetchLast10BlogPosts()
-	if err != nil {
-		log.Printf("Error fetching last 10 blog posts: %v", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	resp, err := json.Marshal(last5Posts)
-	if err != nil {
-		log.Printf("Error marshalling last 10 blog posts: %v", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	fmt.Fprint(w, string(resp))
 }
 
 func (app *Application) GetBlogPostByID(w http.ResponseWriter, r *http.Request) {
