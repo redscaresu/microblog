@@ -3,8 +3,8 @@ package main
 import (
 	"errors"
 	"fmt"
-	"microblog/internal/handlers"
-	"microblog/internal/repository"
+	"microblog/pkg/handlers"
+	"microblog/pkg/repository"
 	"net"
 	"net/http"
 	"os"

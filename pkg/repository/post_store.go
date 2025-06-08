@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"microblog/internal/models"
+	"microblog/pkg/models"
 
 	"github.com/google/uuid"
 )
