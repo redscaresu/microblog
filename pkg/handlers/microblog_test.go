@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"sync"
 	"testing"
 
 	"github.com/google/uuid"
@@ -229,7 +230,11 @@ func newTestServer(t *testing.T, store repository.PostStore) net.Addr {
 	go func() {
 		err := handlers.RegisterRoutes(mux,
 			addr,
-			handlers.NewApplication("foo", "foo", store))
+			handlers.NewApplication("foo",
+				"foo",
+				store,
+				[]*models.BlogPost{},
+				&sync.RWMutex{}))
 		require.NoError(t, err)
 	}()
 

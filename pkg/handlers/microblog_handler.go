@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	htmltemplate "html/template"
@@ -56,6 +57,8 @@ const re = `[^a-zA-Z0-9\s]+`
 type Application struct {
 	Auth      *Auth
 	PostStore repository.PostStore
+	cache     []*models.BlogPost
+	cacheMu   *sync.RWMutex
 }
 
 type Auth struct {
@@ -63,13 +66,15 @@ type Auth struct {
 	Password string
 }
 
-func NewApplication(userName, passWord string, postStore repository.PostStore) *Application {
+func NewApplication(userName, passWord string, postStore repository.PostStore, cache []*models.BlogPost, cacheMu *sync.RWMutex) *Application {
 	return &Application{
 		Auth: &Auth{
 			UserName: userName,
 			Password: passWord,
 		},
 		PostStore: postStore,
+		cache:     cache,
+		cacheMu:   cacheMu,
 	}
 
 }
@@ -163,14 +168,24 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	blogPosts, err := app.PostStore.FetchLast10BlogPosts()
-	if err != nil {
-		log.Printf("Error fetching last 10 blog posts: %v", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	app.cacheMu.RLock()
+	if len(app.cache) < 1 {
+		//cache miss
+		app.cacheMu.RUnlock()
+		unNormalizedblogPosts, err := app.PostStore.FetchLast10BlogPosts()
+		if err != nil {
+			log.Printf("Error fetching last 10 blog posts: %v", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		app.cacheMu.Lock()
+		app.cache = unNormalizedblogPosts
+		app.cacheMu.Unlock()
 	}
 
-	normalizedBlogPost := normalizeBlogPost(blogPosts)
+	app.cacheMu.RLock()
+	normalizedBlogPost := normalizeBlogPost(app.cache)
+	app.cacheMu.RUnlock()
 
 	err = tpl.Execute(w, normalizedBlogPost)
 	if err != nil {
@@ -280,6 +295,16 @@ func (app *Application) Submit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	blogPosts, err := app.PostStore.FetchLast10BlogPosts()
+	if err != nil {
+		http.Error(w, "unable to fetch last 10 blog posts", http.StatusInternalServerError)
+		return
+	}
+
+	app.cacheMu.Lock()
+	app.cache = blogPosts
+	app.cacheMu.Unlock()
+
 	err = json.NewEncoder(w).Encode(newBlogPost)
 	if err != nil {
 		log.Printf("Error encoding new blog post: %v", err)
@@ -326,6 +351,16 @@ func (app *Application) UpdatePostHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	blogPosts, err := app.PostStore.FetchLast10BlogPosts()
+	if err != nil {
+		http.Error(w, "unable to fetch last 10 blog posts", http.StatusInternalServerError)
+		return
+	}
+
+	app.cacheMu.Lock()
+	app.cache = blogPosts
+	app.cacheMu.Unlock()
+
 	fmt.Fprintf(w, "Post updated successfully!")
 }
 
@@ -348,33 +383,48 @@ func (app *Application) DeletePostHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	app.cacheMu.Lock()
+	app.cache = nil
+	app.cacheMu.Unlock()
+
 	fmt.Fprintf(w, "Post deleted successfully!")
 }
 
-func normalizeBlogPost(blogPosts []*models.BlogPost) []*models.BlogPost {
+func normalizeBlogPost(unNormalizedBlogPosts []*models.BlogPost) []*models.BlogPost {
 	preview := 300
-	for i := range blogPosts {
+
+	normalizedBlogPosts := make([]*models.BlogPost, len(unNormalizedBlogPosts))
+
+	for i := range unNormalizedBlogPosts {
+		normalizedBlogPosts[i] = &models.BlogPost{
+			ID:            unNormalizedBlogPosts[i].ID,
+			Title:         unNormalizedBlogPosts[i].Title,
+			Content:       unNormalizedBlogPosts[i].Content,
+			Name:          unNormalizedBlogPosts[i].Name,
+			CreatedAt:     unNormalizedBlogPosts[i].CreatedAt,
+			UpdatedAt:     unNormalizedBlogPosts[i].UpdatedAt,
+			FormattedDate: unNormalizedBlogPosts[i].FormattedDate,
+		}
 		var contentBuf bytes.Buffer
-		if err := md.Convert([]byte(blogPosts[i].Content), &contentBuf); err != nil {
+		if err := md.Convert([]byte(normalizedBlogPosts[i].Content), &contentBuf); err != nil {
 			log.Printf("Error converting blog post content to HTML: %v\n", err)
 		} else {
-			blogPosts[i].Content = contentBuf.String()
+			normalizedBlogPosts[i].Content = contentBuf.String()
 		}
-
 		var titleBuf bytes.Buffer
-		if err := md.Convert([]byte(blogPosts[i].Title), &titleBuf); err != nil {
+		if err := md.Convert([]byte(normalizedBlogPosts[i].Title), &titleBuf); err != nil {
 			log.Printf("Error converting blog post title to HTML: %v\n", err)
 		} else {
-			blogPosts[i].Title = titleBuf.String()
+			normalizedBlogPosts[i].Title = titleBuf.String()
 		}
 	}
 
-	for i := range blogPosts {
-		if len(blogPosts[i].Content) > preview {
-			blogPosts[i].Content = blogPosts[i].Content[:preview] + "..."
+	for i := range normalizedBlogPosts {
+		if len(normalizedBlogPosts[i].Content) > preview {
+			normalizedBlogPosts[i].Content = unNormalizedBlogPosts[i].Content[:preview] + "..."
 		}
 	}
-	return blogPosts
+	return normalizedBlogPosts
 }
 
 func formattedDate(now time.Time) string {
