@@ -128,7 +128,7 @@ func (p *PostgresStore) FetchLast10BlogPosts() ([]*models.BlogPost, error) {
 
 	blogPosts := []*models.BlogPost{}
 
-	rows, err := p.DB.Query("SELECT * FROM blog LIMIT 10;")
+	rows, err := p.DB.Query("SELECT * FROM blog ORDER BY created_at DESC, blog_id DESC LIMIT 10;")
 	if err != nil {
 		return nil, err
 	}
