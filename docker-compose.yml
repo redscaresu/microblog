@@ -13,5 +13,23 @@ services:
           - '5438:5432'
         volumes: 
           - ./postgres-data:/var/lib/postgresql/data
-          # copy the sql script to create tables
           - ./sql/create_tables.sql:/docker-entrypoint-initdb.d/create_tables.sql
+        healthcheck:
+          test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+          interval: 10s
+          timeout: 5s
+          retries: 5
+
+    app:
+        build: .
+        ports:
+          - "8080:8080"
+        env_file:
+          - .env.dev
+        environment:
+          - DB_HOST=postgres
+          - DB_PORT=5432
+        depends_on:
+          postgres:
+            condition: service_healthy
+        command: ["go", "run", "cmd/main.go"]
