@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"microblog/internal/models"
+	"microblog/pkg/models"
 	"os"
 
 	"github.com/google/uuid"
