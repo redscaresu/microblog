@@ -4,8 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"microblog/internal/models"
-	"microblog/internal/repository"
+	"microblog/pkg/models"
+	"microblog/pkg/repository"
 	"testing"
 	"time"
 
