@@ -351,30 +351,30 @@ func (app *Application) DeletePostHandler(w http.ResponseWriter, r *http.Request
 	fmt.Fprintf(w, "Post deleted successfully!")
 }
 
-func normalizeBlogPost(blogPost []*models.BlogPost) []*models.BlogPost {
+func normalizeBlogPost(blogPosts []*models.BlogPost) []*models.BlogPost {
 	preview := 300
-	for i := range blogPost {
+	for i := range blogPosts {
 		var contentBuf bytes.Buffer
-		if err := md.Convert([]byte(blogPost[i].Content), &contentBuf); err != nil {
+		if err := md.Convert([]byte(blogPosts[i].Content), &contentBuf); err != nil {
 			log.Printf("Error converting blog post content to HTML: %v\n", err)
 		} else {
-			blogPost[i].Content = contentBuf.String()
+			blogPosts[i].Content = contentBuf.String()
 		}
 
 		var titleBuf bytes.Buffer
-		if err := md.Convert([]byte(blogPost[i].Title), &titleBuf); err != nil {
+		if err := md.Convert([]byte(blogPosts[i].Title), &titleBuf); err != nil {
 			log.Printf("Error converting blog post title to HTML: %v\n", err)
 		} else {
-			blogPost[i].Title = titleBuf.String()
+			blogPosts[i].Title = titleBuf.String()
 		}
 	}
 
-	for i := range blogPost {
-		if len(blogPost[i].Content) > preview {
-			blogPost[i].Content = blogPost[i].Content[:preview] + "..."
+	for i := range blogPosts {
+		if len(blogPosts[i].Content) > preview {
+			blogPosts[i].Content = blogPosts[i].Content[:preview] + "..."
 		}
 	}
-	return blogPost
+	return blogPosts
 }
 
 func formattedDate(now time.Time) string {
