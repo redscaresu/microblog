@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"sync"
 	"testing"
 
 	"github.com/google/uuid"
@@ -42,14 +43,20 @@ I read this article, which I think articulates perfectly the skepticism software
 	fmt.Println("===========================")
 }
 
-func TestListenAndServe_UsesGivenStore(t *testing.T) {
+func TestListenAndServe_NoCache(t *testing.T) {
 	t.Parallel()
 
 	id := uuid.New()
 	blogPost := &models.BlogPost{ID: id, Title: "foo", Content: "boo", FormattedDate: "1 June, 2025"}
 	store := &repository.MemoryPostStore{BlogPosts: []*models.BlogPost{blogPost}}
+	cache := &handlers.Cache{
+		BlogPosts: []*models.BlogPost{},
+		Mutex:     &sync.Mutex{},
+	}
 
-	addr := newTestServer(t, store)
+	addr := newTestServer(t, store, cache)
+	// the test server goes to the homepage first which hydrates the cache.  Thats why we have to invalidate it again.
+	cache.InvalidateCache()
 
 	resp, err := http.Get("http://" + addr.String())
 	require.NoError(t, err)
@@ -64,12 +71,64 @@ func TestListenAndServe_UsesGivenStore(t *testing.T) {
 	assert.Contains(t, got, "<h3 style=\"color: grey; font-size: 0.9em;\">1 June, 2025</h3>")
 }
 
+func TestListenAndServe_CacheHit(t *testing.T) {
+	t.Parallel()
+
+	id := uuid.New()
+	blogPost := &models.BlogPost{ID: id, Title: "foo", Content: "boo", FormattedDate: "1 June, 2025"}
+	store := &repository.MemoryPostStore{BlogPosts: []*models.BlogPost{blogPost}}
+	cache := &handlers.Cache{
+		BlogPosts: []*models.BlogPost{},
+		Mutex:     &sync.Mutex{},
+	}
+
+	addr := newTestServer(t, store, cache)
+	// the test server goes to the homepage first which hydrates the cache.  Thats why we have to invalidate it again.
+	cache.InvalidateCache()
+
+	countRoundTripper := &countingRoundTripper{}
+	client := http.Client{
+		Transport: countRoundTripper,
+	}
+
+	resp, err := client.Get("http://" + addr.String())
+	require.NoError(t, err)
+	assert.Equal(t, 1, countRoundTripper.Count)
+
+	read, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	got := string(read)
+	assert.Contains(t, got, "<h2><a href=\"/blogpost?name=")
+	assert.Contains(t, got, "<p>foo</p>")
+	assert.Contains(t, got, "<p>boo</p>")
+	assert.Contains(t, got, "<h3 style=\"color: grey; font-size: 0.9em;\">1 June, 2025</h3>")
+
+	// test cache hit
+	resp, err = client.Get("http://" + addr.String())
+	require.NoError(t, err)
+
+	assert.Equal(t, 2, countRoundTripper.Count)
+
+	read, err = io.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	got = string(read)
+	assert.Contains(t, got, "<h2><a href=\"/blogpost?name=")
+	assert.Contains(t, got, "<p>foo</p>")
+	assert.Contains(t, got, "<p>boo</p>")
+	assert.Contains(t, got, "<h3 style=\"color: grey; font-size: 0.9em;\">1 June, 2025</h3>")
+}
+
 func TestSubmitHandler(t *testing.T) {
 	t.Parallel()
 
 	store := &repository.MemoryPostStore{}
-	app := &handlers.Application{PostStore: store}
-
+	cache := &handlers.Cache{
+		BlogPosts: []*models.BlogPost{},
+		Mutex:     &sync.Mutex{},
+	}
+	app := handlers.NewApplication("", "", store, cache)
 	server := httptest.NewServer(http.HandlerFunc(app.Submit))
 	defer server.Close()
 
@@ -103,8 +162,11 @@ func TestUpdatePostHandler(t *testing.T) {
 	t.Parallel()
 
 	store := &repository.MemoryPostStore{}
-	app := &handlers.Application{PostStore: store}
-
+	cache := &handlers.Cache{
+		BlogPosts: []*models.BlogPost{},
+		Mutex:     &sync.Mutex{},
+	}
+	app := handlers.NewApplication("", "", store, cache)
 	submitServer := httptest.NewServer(http.HandlerFunc(app.Submit))
 	defer submitServer.Close()
 
@@ -149,7 +211,11 @@ func TestUpdateHandlerBasicAuthError(t *testing.T) {
 	t.Parallel()
 
 	store := &repository.MemoryPostStore{}
-	addr := newTestServer(t, store)
+	cache := &handlers.Cache{
+		BlogPosts: []*models.BlogPost{},
+		Mutex:     &sync.Mutex{},
+	}
+	addr := newTestServer(t, store, cache)
 
 	endpoint := fmt.Sprintf("http://%v/updatepost", addr)
 	req, err := http.NewRequest("GET", endpoint, nil)
@@ -166,7 +232,11 @@ func TestEditPostHandlerBasicAuthError(t *testing.T) {
 	t.Parallel()
 
 	store := &repository.MemoryPostStore{}
-	addr := newTestServer(t, store)
+	cache := &handlers.Cache{
+		BlogPosts: []*models.BlogPost{},
+		Mutex:     &sync.Mutex{},
+	}
+	addr := newTestServer(t, store, cache)
 
 	endpoint := fmt.Sprintf("http://%v/editpost?name=%s", addr, "doesnotexit")
 	req, err := http.NewRequest("GET", endpoint, nil)
@@ -183,7 +253,11 @@ func TestSubmitHandlerBasicAuthError(t *testing.T) {
 	t.Parallel()
 
 	store := &repository.MemoryPostStore{}
-	addr := newTestServer(t, store)
+	cache := &handlers.Cache{
+		BlogPosts: []*models.BlogPost{},
+		Mutex:     &sync.Mutex{},
+	}
+	addr := newTestServer(t, store, cache)
 
 	endpoint := fmt.Sprintf("http://%v/newpost", addr)
 	req, err := http.NewRequest("GET", endpoint, nil)
@@ -214,10 +288,87 @@ func TestIsAuthenticatedReturnsFalseWhenIncorrectPasswordProvided(t *testing.T) 
 	want := false
 
 	assert.Equal(t, want, got)
+}
+
+func TestGetBlogPostByName_ServesFromCacheOnSubsequentRequests(t *testing.T) {
+	t.Parallel()
+
+	id := uuid.New()
+	blogPost := &models.BlogPost{ID: id, Name: "testtitle", Title: "Test Title", Content: "Test Content", FormattedDate: "1 June, 2025"}
+	store := &repository.MemoryPostStore{BlogPosts: []*models.BlogPost{blogPost}}
+	cache := &handlers.Cache{
+		BlogPosts: []*models.BlogPost{},
+		Mutex:     &sync.Mutex{},
+	}
+
+	addr := newTestServer(t, store, cache)
+
+	blogPostURL := fmt.Sprintf("http://%s/blogpost?name=testtitle", addr.String())
+
+	countingTransport := &countingRoundTripper{}
+	cacheClient := &http.Client{Transport: countingTransport}
+
+	// First request
+	resp1, err := cacheClient.Get(blogPostURL)
+	require.NoError(t, err)
+	defer resp1.Body.Close()
+	require.Equal(t, http.StatusOK, resp1.StatusCode)
+	assert.Equal(t, 1, countingTransport.Count)
+
+	body1, err := io.ReadAll(resp1.Body)
+	require.NoError(t, err)
+	content1 := string(body1)
+	assert.Contains(t, content1, "Test Title")
+	assert.Contains(t, content1, "Test Content")
+
+	// Second request should use cache
+	resp2, err := cacheClient.Get(blogPostURL)
+	require.NoError(t, err)
+	defer resp2.Body.Close()
+	require.Equal(t, http.StatusOK, resp2.StatusCode)
+	assert.Equal(t, 2, countingTransport.Count)
+
+	body2, err := io.ReadAll(resp2.Body)
+	require.NoError(t, err)
+	content2 := string(body2)
+
+	// Contents should be the same
+	assert.Equal(t, content1, content2)
+}
+
+func TestGetBlogPostByName_NoCache(t *testing.T) {
+	t.Parallel()
+
+	id := uuid.New()
+	blogPost := &models.BlogPost{ID: id, Name: "testtitle", Title: "Test Title", Content: "Test Content", FormattedDate: "1 June, 2025"}
+	store := &repository.MemoryPostStore{BlogPosts: []*models.BlogPost{blogPost}}
+	cache := &handlers.Cache{
+		BlogPosts: []*models.BlogPost{},
+		Mutex:     &sync.Mutex{},
+	}
+
+	addr := newTestServer(t, store, cache)
+
+	blogPostURL := fmt.Sprintf("http://%s/blogpost?name=testtitle", addr.String())
+
+	countingTransport := &countingRoundTripper{}
+	cacheClient := &http.Client{Transport: countingTransport}
+
+	resp, err := cacheClient.Get(blogPostURL)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, 1, countingTransport.Count)
+
+	body, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+	content1 := string(body)
+	assert.Contains(t, content1, "Test Title")
+	assert.Contains(t, content1, "Test Content")
 
 }
 
-func newTestServer(t *testing.T, store repository.PostStore) net.Addr {
+func newTestServer(t *testing.T, store repository.PostStore, cache *handlers.Cache) net.Addr {
 	t.Helper()
 
 	netListener, err := net.Listen("tcp", "127.0.0.1:")
@@ -229,20 +380,23 @@ func newTestServer(t *testing.T, store repository.PostStore) net.Addr {
 	go func() {
 		err := handlers.RegisterRoutes(mux,
 			addr,
-			handlers.NewApplication("foo", "foo", store))
+			handlers.NewApplication("foo",
+				"foo",
+				store,
+				cache))
 		require.NoError(t, err)
 	}()
-
-	resp, err := http.Get("http:" + addr)
-	for err != nil {
-		t.Log("retrying")
-		resp, err = http.Get("http://" + addr)
-		t.Logf("unable to get endpoint, err is %s", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		t.Fatal("non statusok return", resp.StatusCode)
-	}
-
 	return netListener.Addr()
+}
+
+// RoundTripper is the custom RoundTripper that logs API calls
+type countingRoundTripper struct {
+	Count int
+}
+
+// RoundTrip intercepts the HTTP request and logs the details
+func (r *countingRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	r.Count++
+	// Perform the request
+	return http.DefaultTransport.RoundTrip(req)
 }
