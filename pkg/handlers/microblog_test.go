@@ -55,8 +55,6 @@ func TestListenAndServe_NoCache(t *testing.T) {
 	}
 
 	addr := newTestServer(t, store, cache)
-	// the test server goes to the homepage first which hydrates the cache.  Thats why we have to invalidate it again.
-	cache.InvalidateCache()
 
 	resp, err := http.Get("http://" + addr.String())
 	require.NoError(t, err)
@@ -83,8 +81,6 @@ func TestListenAndServe_CacheHit(t *testing.T) {
 	}
 
 	addr := newTestServer(t, store, cache)
-	// the test server goes to the homepage first which hydrates the cache.  Thats why we have to invalidate it again.
-	cache.InvalidateCache()
 
 	countRoundTripper := &countingRoundTripper{}
 	client := http.Client{
