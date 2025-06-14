@@ -157,6 +157,10 @@ func TestSubmitHandler(t *testing.T) {
 	assert.NotEmpty(t, createdPost.CreatedAt)
 	assert.NotEmpty(t, createdPost.UpdatedAt)
 	assert.NotEmpty(t, createdPost.FormattedDate)
+
+	// Assert that the cache has been hydrated when a blogpost is submitted
+	assert.Equal(t, createdPost.Title, cache.BlogPosts[0].Title)
+	assert.Equal(t, createdPost.Title, cache.BlogPosts[0].Content)
 }
 
 func TestUpdatePostHandler(t *testing.T) {
