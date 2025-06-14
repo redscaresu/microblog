@@ -170,24 +170,22 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 	}
 
 	app.CacheMu.RLock()
-	if len(app.Cache) < 1 {
-		// cache miss
-		app.CacheMu.RUnlock()
+	cacheSize := len(app.Cache)
+	app.CacheMu.RUnlock()
+	// cache miss, lets fetch from the database
+	if cacheSize < 1 {
 		unNormalizedblogPosts, err := app.PostStore.FetchLast10BlogPosts()
 		if err != nil {
 			log.Printf("Error fetching last 10 blog posts: %v", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		app.CacheMu.Lock()
-		// we made an expensive DB call, lets not waste it and add it to the cache.
 		app.Cache = unNormalizedblogPosts
-		app.CacheMu.Unlock()
 	}
 
-	app.CacheMu.RLock()
+	// if we miss the miss the cache then app.Cache is initialized from line 183
+	// if we hit the cache then we just immediately use the current app.Cache
 	normalizedBlogPost := normalizeBlogPost(app.Cache)
-	app.CacheMu.RUnlock()
 
 	err = tpl.Execute(w, normalizedBlogPost)
 	if err != nil {
