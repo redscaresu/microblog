@@ -69,12 +69,7 @@ func TestSubmitHandler(t *testing.T) {
 	t.Parallel()
 
 	store := &repository.MemoryPostStore{}
-	app := &handlers.Application{
-		PostStore: store,
-		Cache:     []*models.BlogPost{},
-		CacheMu:   &sync.RWMutex{},
-	}
-
+	app := handlers.NewApplication("", "", store, []*models.BlogPost{}, &sync.RWMutex{})
 	server := httptest.NewServer(http.HandlerFunc(app.Submit))
 	defer server.Close()
 
@@ -108,11 +103,7 @@ func TestUpdatePostHandler(t *testing.T) {
 	t.Parallel()
 
 	store := &repository.MemoryPostStore{}
-	app := &handlers.Application{
-		PostStore: store,
-		Cache:     []*models.BlogPost{},
-		CacheMu:   &sync.RWMutex{},
-	}
+	app := handlers.NewApplication("", "", store, []*models.BlogPost{}, &sync.RWMutex{})
 	submitServer := httptest.NewServer(http.HandlerFunc(app.Submit))
 	defer submitServer.Close()
 
