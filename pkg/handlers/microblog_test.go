@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"sync"
 	"testing"
 
@@ -276,8 +277,97 @@ func TestIsAuthenticatedReturnsFalseWhenIncorrectPasswordProvided(t *testing.T) 
 	want := false
 
 	assert.Equal(t, want, got)
-
 }
+
+func TestGetBlogPostByName_ServesFromCacheOnSubsequentRequests(t *testing.T) {
+	t.Parallel()
+
+	store := &repository.MemoryPostStore{}
+	addr := newTestServer(t, store)
+
+	submitURL := fmt.Sprintf("http://%s/submit", addr.String())
+
+	form := url.Values{}
+	form.Add("title", "Test Title")
+	form.Add("content", "Test Content")
+
+	// Set basic auth for the submit request
+	req, err := http.NewRequest("POST", submitURL, strings.NewReader(form.Encode()))
+	require.NoError(t, err)
+
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.SetBasicAuth("foo", "foo")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var createdPost models.BlogPost
+	err = json.NewDecoder(resp.Body).Decode(&createdPost)
+	require.NoError(t, err)
+
+	// Now test the cache behavior for the GetBlogPostByName endpoint
+	// First request should populate the cache
+	blogPostURL := fmt.Sprintf("http://%s/blogpost?name=testtitle", addr.String())
+
+	countingTransport := &CountingRoundTripper{}
+	cacheClient := &http.Client{Transport: countingTransport}
+
+	// First request
+	resp1, err := cacheClient.Get(blogPostURL)
+	require.NoError(t, err)
+	defer resp1.Body.Close()
+	require.Equal(t, http.StatusOK, resp1.StatusCode)
+	assert.Equal(t, 1, countingTransport.Count)
+
+	body1, err := io.ReadAll(resp1.Body)
+	require.NoError(t, err)
+	content1 := string(body1)
+	assert.Contains(t, content1, "Test Title")
+	assert.Contains(t, content1, "Test Content")
+
+	// Second request should use cache
+	resp2, err := cacheClient.Get(blogPostURL)
+	require.NoError(t, err)
+	defer resp2.Body.Close()
+	require.Equal(t, http.StatusOK, resp2.StatusCode)
+	assert.Equal(t, 2, countingTransport.Count)
+
+	body2, err := io.ReadAll(resp2.Body)
+	require.NoError(t, err)
+	content2 := string(body2)
+
+	// Contents should be the same
+	assert.Equal(t, content1, content2)
+}
+
+// // delete it from the cache
+// app.Cache.InvalidateCache()
+
+// addr := newTestServer(t, store)
+
+// countRoundTripper := &CountingRoundTripper{}
+// client := http.Client{
+// 	Transport: countRoundTripper,
+// }
+
+// blogPostURL := fmt.Sprintf("http://%s/blogpost?name=%s", addr.String(), "testtitle")
+
+// resp, err = client.Get(blogPostURL)
+// require.NoError(t, err, "First request to GetBlogPostByName should not error. URL used: "+blogPostURL)
+// defer resp.Body.Close()
+
+// require.Equal(t, http.StatusOK, resp.StatusCode)
+
+// var gotAgain models.BlogPost
+// err = json.NewDecoder(resp.Body).Decode(&got)
+// require.NoError(t, err)
+
+// fmt.Println(gotAgain)
+// assert.NotNil(t, gotAgain)
 
 func newTestServer(t *testing.T, store repository.PostStore) net.Addr {
 	t.Helper()

@@ -70,6 +70,14 @@ type Cache struct {
 	Mutex     *sync.Mutex
 }
 
+func (c *Cache) Lock() {
+	c.Mutex.Lock()
+}
+
+func (c *Cache) Unlock() {
+	c.Mutex.Unlock()
+}
+
 // writing to the cache
 func (c *Cache) LoadCache(blogPosts []*models.BlogPost) {
 	c.Mutex.Lock()
@@ -77,7 +85,7 @@ func (c *Cache) LoadCache(blogPosts []*models.BlogPost) {
 	c.Mutex.Unlock()
 }
 
-func (c *Cache) invalidateCache() {
+func (c *Cache) InvalidateCache() {
 	c.Mutex.Lock()
 	c.BlogPosts = nil
 	c.Mutex.Unlock()
@@ -103,6 +111,7 @@ func RegisterRoutes(mux *http.ServeMux, addr string, app *Application) error {
 	mux.HandleFunc("/newpost", app.basicAuth(app.NewPostHandler))
 	mux.HandleFunc("/updatepost", app.basicAuth(app.UpdatePostHandler))
 	mux.HandleFunc("/deletepost", app.basicAuth(app.DeletePostHandler))
+	mux.HandleFunc("/rebuildcache", app.basicAuth(app.RebuildCacheHandler))
 	err := http.ListenAndServe(addr, mux)
 	return err
 }
@@ -233,13 +242,41 @@ func (app *Application) GetBlogPostByName(w http.ResponseWriter, r *http.Request
 	queryParams := r.URL.Query()
 	name := queryParams.Get("name")
 
+	app.Cache.Lock()
+	if len(app.Cache.BlogPosts) > 0 {
+		for _, cachedPost := range app.Cache.BlogPosts {
+			//blog exists in cache
+			if cachedPost.Name == name {
+				blog := cachedPost
+				blog.Content = RenderMarkdown(blog.Content)
+				blog.Title = RenderMarkdown(blog.Title)
+				log.Printf("Processed Content for %s: %s", name, blog.Content)
+
+				tpl, err := texttemplate.New("blogpost.gohtml").Funcs(funcMap).ParseFS(templates, "templates/blogpost.gohtml")
+				if err != nil {
+					log.Printf("Error parsing blogpost.gohtml template: %v", err)
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+
+				err = tpl.Execute(w, blog)
+				if err != nil {
+					log.Printf("Error executing blogpost.gohtml template: %v", err)
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+			}
+		}
+		app.Cache.Unlock()
+		return
+	}
+
 	blog, err := app.PostStore.GetByName(name)
 	if err != nil {
 		log.Printf("Error getting blog post by name %s: %v", name, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
 	log.Printf("Original Content for %s: %s", name, blog.Content)
 
 	blog.Content = RenderMarkdown(blog.Content)
@@ -395,9 +432,32 @@ func (app *Application) DeletePostHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	app.Cache.invalidateCache()
+	app.Cache.InvalidateCache()
 	fmt.Fprint(w, "Cache deleted")
 	fmt.Fprintf(w, "Post deleted successfully!")
+}
+
+func (app *Application) RebuildCacheHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	app.Cache.InvalidateCache()
+	log.Println("Cache invalidated.")
+
+	allPosts, err := app.PostStore.GetAll()
+	if err != nil {
+		log.Printf("Error fetching posts from store to rebuild cache: %v", err)
+		http.Error(w, "Failed to rebuild cache: could not fetch posts", http.StatusInternalServerError)
+		return
+	}
+
+	app.Cache.LoadCache(allPosts)
+	log.Printf("Cache rebuilt successfully with %d posts.", len(allPosts))
+
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, "Cache invalidated and rebuilt successfully with %d posts.\n", len(allPosts))
 }
 
 func normalizeBlogPost(unNormalizedBlogPosts []*models.BlogPost) []*models.BlogPost {

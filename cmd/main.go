@@ -61,12 +61,14 @@ func run() error {
 		return fmt.Errorf("unable to connect to database due to error: %v", err)
 	}
 
-	cacheMu := sync.RWMutex{}
+	cache := &handlers.Cache{
+		BlogPosts: []*models.BlogPost{},
+		Mutex:     &sync.Mutex{},
+	}
 	app := handlers.NewApplication(os.Getenv("AUTH_USERNAME"),
 		os.Getenv("AUTH_PASSWORD"),
 		psStore,
-		[]*models.BlogPost{},
-		&cacheMu)
+		cache)
 
 	netListener, err := net.Listen("tcp", ":8080")
 	addr := netListener.Addr().String()
