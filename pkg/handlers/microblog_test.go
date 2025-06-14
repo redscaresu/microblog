@@ -359,21 +359,18 @@ func TestGetBlogPostByName_NoCache(t *testing.T) {
 
 	blogPostURL := fmt.Sprintf("http://%s/blogpost?name=testtitle", addr.String())
 
-	countingTransport := &countingRoundTripper{}
-	cacheClient := &http.Client{Transport: countingTransport}
-
-	resp, err := cacheClient.Get(blogPostURL)
+	resp, err := http.Get(blogPostURL)
 	require.NoError(t, err)
 	defer resp.Body.Close()
 	require.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, 1, countingTransport.Count)
+	// database should be access once here
+	assert.Equal(t, 1, store.AccessCounter)
 
 	body, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
 	content1 := string(body)
 	assert.Contains(t, content1, "Test Title")
 	assert.Contains(t, content1, "Test Content")
-
 }
 
 func newTestServer(t *testing.T, store repository.PostStore, cache *handlers.Cache) net.Addr {
@@ -395,16 +392,4 @@ func newTestServer(t *testing.T, store repository.PostStore, cache *handlers.Cac
 		require.NoError(t, err)
 	}()
 	return netListener.Addr()
-}
-
-// RoundTripper is the custom RoundTripper that logs API calls
-type countingRoundTripper struct {
-	Count int
-}
-
-// RoundTrip intercepts the HTTP request and logs the details
-func (r *countingRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
-	r.Count++
-	// Perform the request
-	return http.DefaultTransport.RoundTrip(req)
 }
