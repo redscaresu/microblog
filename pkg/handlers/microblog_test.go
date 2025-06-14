@@ -82,14 +82,18 @@ func TestListenAndServe_CacheHit(t *testing.T) {
 
 	addr := newTestServer(t, store, cache)
 
-	countRoundTripper := &countingRoundTripper{}
-	client := http.Client{
-		Transport: countRoundTripper,
-	}
+	// cache is empty
+	require.Len(t, cache.BlogPosts, 0)
 
-	resp, err := client.Get("http://" + addr.String())
+	resp, err := http.Get("http://" + addr.String())
 	require.NoError(t, err)
-	assert.Equal(t, 1, countRoundTripper.Count)
+
+	// Database accessed
+	require.Equal(t, 1, store.AccessCounter)
+
+	// cache is hydrated on the first Get to the homepage
+	require.Len(t, cache.BlogPosts, 1)
+	require.Equal(t, []*models.BlogPost{blogPost}, cache.BlogPosts)
 
 	read, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
@@ -101,10 +105,11 @@ func TestListenAndServe_CacheHit(t *testing.T) {
 	assert.Contains(t, got, "<h3 style=\"color: grey; font-size: 0.9em;\">1 June, 2025</h3>")
 
 	// test cache hit
-	resp, err = client.Get("http://" + addr.String())
+	resp, err = http.Get("http://" + addr.String())
 	require.NoError(t, err)
 
-	assert.Equal(t, 2, countRoundTripper.Count)
+	// Database has still only been accessed once which means the cache has been used
+	require.Equal(t, 1, store.AccessCounter)
 
 	read, err = io.ReadAll(resp.Body)
 	require.NoError(t, err)
