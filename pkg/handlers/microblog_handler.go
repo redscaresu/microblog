@@ -324,6 +324,7 @@ func (app *Application) Submit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fmt.Fprint(w, "cache reloaded")
 	fmt.Fprintf(w, "Post submitted successfully!")
 }
 
@@ -371,6 +372,7 @@ func (app *Application) UpdatePostHandler(w http.ResponseWriter, r *http.Request
 
 	// reinflate the cache with what has come out of the DB
 	app.Cache.LoadCache(blogPosts)
+	fmt.Fprintf(w, "cache reloaded")
 	fmt.Fprintf(w, "Post updated successfully!")
 }
 
