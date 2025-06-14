@@ -171,7 +171,7 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 
 	app.CacheMu.RLock()
 	if len(app.Cache) < 1 {
-		//cache miss
+		// cache miss
 		app.CacheMu.RUnlock()
 		unNormalizedblogPosts, err := app.PostStore.FetchLast10BlogPosts()
 		if err != nil {
@@ -180,11 +180,12 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		app.CacheMu.Lock()
+		// we made an expensive DB call, lets not waste it and add it to the cache.
 		app.Cache = unNormalizedblogPosts
 		app.CacheMu.Unlock()
 	}
 
-	app.CacheMu.RLock()
+	// we are still holding the lock from line 172 here so we dont need to lock again.
 	normalizedBlogPost := normalizeBlogPost(app.Cache)
 	app.CacheMu.RUnlock()
 
