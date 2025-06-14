@@ -271,14 +271,27 @@ func (app *Application) GetBlogPostByName(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	blog, err := app.PostStore.GetByName(name)
+	// cache miss, lets fetch from the database
+	unNormalizedblogPosts, err := app.PostStore.FetchLast10BlogPosts()
 	if err != nil {
-		log.Printf("Error getting blog post by name %s: %v", name, err)
+		log.Printf("Error fetching last 10 blog posts: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	log.Printf("Original Content for %s: %s", name, blog.Content)
 
+	// unlock the cache from the above.
+	app.Cache.Unlock()
+	// inflate the cache with what has come from the DB
+	app.Cache.LoadCache(unNormalizedblogPosts)
+
+	var blog *models.BlogPost
+	for _, cachedBlogPost := range app.Cache.BlogPosts {
+		if cachedBlogPost.Name == name {
+			blog = cachedBlogPost
+		}
+	}
+
+	log.Printf("Original Content for %s: %s", name, blog.Content)
 	blog.Content = RenderMarkdown(blog.Content)
 	blog.Title = RenderMarkdown(blog.Title)
 
@@ -351,7 +364,7 @@ func (app *Application) Submit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// reinflate the cache with what has come out of the DB
+	// rehydrate the cache with what has come out of the DB
 	app.Cache.LoadCache(blogPosts)
 
 	err = json.NewEncoder(w).Encode(newBlogPost)
@@ -446,7 +459,7 @@ func (app *Application) RebuildCacheHandler(w http.ResponseWriter, r *http.Reque
 	app.Cache.InvalidateCache()
 	log.Println("Cache invalidated.")
 
-	allPosts, err := app.PostStore.GetAll()
+	allPosts, err := app.PostStore.FetchLast10BlogPosts()
 	if err != nil {
 		log.Printf("Error fetching posts from store to rebuild cache: %v", err)
 		http.Error(w, "Failed to rebuild cache: could not fetch posts", http.StatusInternalServerError)

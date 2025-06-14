@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"strings"
 	"sync"
 	"testing"
 
@@ -44,7 +43,7 @@ I read this article, which I think articulates perfectly the skepticism software
 	fmt.Println("===========================")
 }
 
-func TestListenAndServe_UsesGivenStore(t *testing.T) {
+func TestListenAndServe_NoCache(t *testing.T) {
 	t.Parallel()
 
 	id := uuid.New()
@@ -56,6 +55,8 @@ func TestListenAndServe_UsesGivenStore(t *testing.T) {
 	}
 
 	addr := newTestServer(t, store, cache)
+	// the test server goes to the homepage first which hydrates the cache.  Thats why we have to invalidate it again.
+	cache.InvalidateCache()
 
 	resp, err := http.Get("http://" + addr.String())
 	require.NoError(t, err)
@@ -70,18 +71,6 @@ func TestListenAndServe_UsesGivenStore(t *testing.T) {
 	assert.Contains(t, got, "<h3 style=\"color: grey; font-size: 0.9em;\">1 June, 2025</h3>")
 }
 
-// RoundTripper is the custom RoundTripper that logs API calls
-type CountingRoundTripper struct {
-	Count int
-}
-
-// RoundTrip intercepts the HTTP request and logs the details
-func (r *CountingRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
-	r.Count++
-	// Perform the request
-	return http.DefaultTransport.RoundTrip(req)
-}
-
 func TestListenAndServe_CacheHit(t *testing.T) {
 	t.Parallel()
 
@@ -94,8 +83,10 @@ func TestListenAndServe_CacheHit(t *testing.T) {
 	}
 
 	addr := newTestServer(t, store, cache)
+	// the test server goes to the homepage first which hydrates the cache.  Thats why we have to invalidate it again.
+	cache.InvalidateCache()
 
-	countRoundTripper := &CountingRoundTripper{}
+	countRoundTripper := &countingRoundTripper{}
 	client := http.Client{
 		Transport: countRoundTripper,
 	}
@@ -302,42 +293,19 @@ func TestIsAuthenticatedReturnsFalseWhenIncorrectPasswordProvided(t *testing.T) 
 func TestGetBlogPostByName_ServesFromCacheOnSubsequentRequests(t *testing.T) {
 	t.Parallel()
 
-	store := &repository.MemoryPostStore{}
+	id := uuid.New()
+	blogPost := &models.BlogPost{ID: id, Name: "testtitle", Title: "Test Title", Content: "Test Content", FormattedDate: "1 June, 2025"}
+	store := &repository.MemoryPostStore{BlogPosts: []*models.BlogPost{blogPost}}
 	cache := &handlers.Cache{
 		BlogPosts: []*models.BlogPost{},
 		Mutex:     &sync.Mutex{},
 	}
+
 	addr := newTestServer(t, store, cache)
 
-	submitURL := fmt.Sprintf("http://%s/submit", addr.String())
-
-	form := url.Values{}
-	form.Add("title", "Test Title")
-	form.Add("content", "Test Content")
-
-	// Set basic auth for the submit request
-	req, err := http.NewRequest("POST", submitURL, strings.NewReader(form.Encode()))
-	require.NoError(t, err)
-
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.SetBasicAuth("foo", "foo")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	require.NoError(t, err)
-	defer resp.Body.Close()
-
-	require.Equal(t, http.StatusOK, resp.StatusCode)
-
-	var createdPost models.BlogPost
-	err = json.NewDecoder(resp.Body).Decode(&createdPost)
-	require.NoError(t, err)
-
-	// Now test the cache behavior for the GetBlogPostByName endpoint
-	// First request should populate the cache
 	blogPostURL := fmt.Sprintf("http://%s/blogpost?name=testtitle", addr.String())
 
-	countingTransport := &CountingRoundTripper{}
+	countingTransport := &countingRoundTripper{}
 	cacheClient := &http.Client{Transport: countingTransport}
 
 	// First request
@@ -381,12 +349,9 @@ func TestGetBlogPostByName_NoCache(t *testing.T) {
 
 	addr := newTestServer(t, store, cache)
 
-	// the test server goes to the homepage first which hydrates the cache.  Thats why we have to invalidate it again.
-	cache.InvalidateCache()
-
 	blogPostURL := fmt.Sprintf("http://%s/blogpost?name=testtitle", addr.String())
 
-	countingTransport := &CountingRoundTripper{}
+	countingTransport := &countingRoundTripper{}
 	cacheClient := &http.Client{Transport: countingTransport}
 
 	resp, err := cacheClient.Get(blogPostURL)
@@ -421,17 +386,17 @@ func newTestServer(t *testing.T, store repository.PostStore, cache *handlers.Cac
 				cache))
 		require.NoError(t, err)
 	}()
-
-	resp, err := http.Get("http:" + addr)
-	for err != nil {
-		t.Log("retrying")
-		resp, err = http.Get("http://" + addr)
-		t.Logf("unable to get endpoint, err is %s", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		t.Fatal("non statusok return", resp.StatusCode)
-	}
-
 	return netListener.Addr()
+}
+
+// RoundTripper is the custom RoundTripper that logs API calls
+type countingRoundTripper struct {
+	Count int
+}
+
+// RoundTrip intercepts the HTTP request and logs the details
+func (r *countingRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	r.Count++
+	// Perform the request
+	return http.DefaultTransport.RoundTrip(req)
 }
