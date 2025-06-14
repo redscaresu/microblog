@@ -270,6 +270,8 @@ func (app *Application) GetBlogPostByName(w http.ResponseWriter, r *http.Request
 		app.Cache.Unlock()
 		return
 	}
+	// unlock the cache from the above.
+	app.Cache.Unlock()
 
 	// cache miss, lets fetch from the database
 	unNormalizedblogPosts, err := app.PostStore.FetchLast10BlogPosts()
@@ -279,8 +281,6 @@ func (app *Application) GetBlogPostByName(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// unlock the cache from the above.
-	app.Cache.Unlock()
 	// inflate the cache with what has come from the DB
 	app.Cache.LoadCache(unNormalizedblogPosts)
 
