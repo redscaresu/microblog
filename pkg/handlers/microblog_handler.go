@@ -57,8 +57,8 @@ const re = `[^a-zA-Z0-9\s]+`
 type Application struct {
 	Auth      *Auth
 	PostStore repository.PostStore
-	cache     []*models.BlogPost
-	cacheMu   *sync.RWMutex
+	Cache     []*models.BlogPost
+	CacheMu   *sync.RWMutex
 }
 
 type Auth struct {
@@ -67,14 +67,15 @@ type Auth struct {
 }
 
 func NewApplication(userName, passWord string, postStore repository.PostStore, cache []*models.BlogPost, cacheMu *sync.RWMutex) *Application {
+
 	return &Application{
 		Auth: &Auth{
 			UserName: userName,
 			Password: passWord,
 		},
 		PostStore: postStore,
-		cache:     cache,
-		cacheMu:   cacheMu,
+		Cache:     cache,
+		CacheMu:   cacheMu,
 	}
 
 }
@@ -168,24 +169,24 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app.cacheMu.RLock()
-	if len(app.cache) < 1 {
+	app.CacheMu.RLock()
+	if len(app.Cache) < 1 {
 		//cache miss
-		app.cacheMu.RUnlock()
+		app.CacheMu.RUnlock()
 		unNormalizedblogPosts, err := app.PostStore.FetchLast10BlogPosts()
 		if err != nil {
 			log.Printf("Error fetching last 10 blog posts: %v", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		app.cacheMu.Lock()
-		app.cache = unNormalizedblogPosts
-		app.cacheMu.Unlock()
+		app.CacheMu.Lock()
+		app.Cache = unNormalizedblogPosts
+		app.CacheMu.Unlock()
 	}
 
-	app.cacheMu.RLock()
-	normalizedBlogPost := normalizeBlogPost(app.cache)
-	app.cacheMu.RUnlock()
+	app.CacheMu.RLock()
+	normalizedBlogPost := normalizeBlogPost(app.Cache)
+	app.CacheMu.RUnlock()
 
 	err = tpl.Execute(w, normalizedBlogPost)
 	if err != nil {
@@ -301,9 +302,9 @@ func (app *Application) Submit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app.cacheMu.Lock()
-	app.cache = blogPosts
-	app.cacheMu.Unlock()
+	app.CacheMu.Lock()
+	app.Cache = blogPosts
+	app.CacheMu.Unlock()
 
 	err = json.NewEncoder(w).Encode(newBlogPost)
 	if err != nil {
@@ -357,9 +358,11 @@ func (app *Application) UpdatePostHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	app.cacheMu.Lock()
-	app.cache = blogPosts
-	app.cacheMu.Unlock()
+	if app.Cache != nil {
+		app.CacheMu.Lock()
+		app.Cache = blogPosts
+		app.CacheMu.Unlock()
+	}
 
 	fmt.Fprintf(w, "Post updated successfully!")
 }
@@ -383,9 +386,9 @@ func (app *Application) DeletePostHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	app.cacheMu.Lock()
-	app.cache = nil
-	app.cacheMu.Unlock()
+	app.CacheMu.Lock()
+	app.Cache = nil
+	app.CacheMu.Unlock()
 
 	fmt.Fprintf(w, "Post deleted successfully!")
 }
