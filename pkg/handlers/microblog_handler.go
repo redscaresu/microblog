@@ -57,8 +57,7 @@ const re = `[^a-zA-Z0-9\s]+`
 type Application struct {
 	Auth      *Auth
 	PostStore repository.PostStore
-	Cache     []*models.BlogPost
-	CacheMu   *sync.RWMutex
+	Cache     *Cache
 }
 
 type Auth struct {
@@ -66,7 +65,25 @@ type Auth struct {
 	Password string
 }
 
-func NewApplication(userName, passWord string, postStore repository.PostStore, cache []*models.BlogPost, cacheMu *sync.RWMutex) *Application {
+type Cache struct {
+	BlogPosts []*models.BlogPost
+	Mutex     *sync.Mutex
+}
+
+// writing to the cache
+func (c *Cache) LoadCache(blogPosts []*models.BlogPost) {
+	c.Mutex.Lock()
+	c.BlogPosts = blogPosts
+	c.Mutex.Unlock()
+}
+
+func (c *Cache) invalidateCache() {
+	c.Mutex.Lock()
+	c.BlogPosts = nil
+	c.Mutex.Unlock()
+}
+
+func NewApplication(userName, passWord string, postStore repository.PostStore, cache *Cache) *Application {
 
 	return &Application{
 		Auth: &Auth{
@@ -75,9 +92,7 @@ func NewApplication(userName, passWord string, postStore repository.PostStore, c
 		},
 		PostStore: postStore,
 		Cache:     cache,
-		CacheMu:   cacheMu,
 	}
-
 }
 
 func RegisterRoutes(mux *http.ServeMux, addr string, app *Application) error {
@@ -169,23 +184,21 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app.CacheMu.RLock()
-	cacheSize := len(app.Cache)
-	app.CacheMu.RUnlock()
-	// cache miss, lets fetch from the database
-	if cacheSize < 1 {
+	if len(app.Cache.BlogPosts) < 1 {
+		// cache miss, lets fetch from the database
 		unNormalizedblogPosts, err := app.PostStore.FetchLast10BlogPosts()
 		if err != nil {
 			log.Printf("Error fetching last 10 blog posts: %v", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		app.Cache = unNormalizedblogPosts
+		// inflate the cache with what has come from the DB
+		app.Cache.LoadCache(unNormalizedblogPosts)
 	}
 
 	// if we miss the miss the cache then app.Cache is initialized from line 183
 	// if we hit the cache then we just immediately use the current app.Cache
-	normalizedBlogPost := normalizeBlogPost(app.Cache)
+	normalizedBlogPost := normalizeBlogPost(app.Cache.BlogPosts)
 
 	err = tpl.Execute(w, normalizedBlogPost)
 	if err != nil {
@@ -301,9 +314,8 @@ func (app *Application) Submit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app.CacheMu.Lock()
-	app.Cache = blogPosts
-	app.CacheMu.Unlock()
+	// reinflate the cache with what has come out of the DB
+	app.Cache.LoadCache(blogPosts)
 
 	err = json.NewEncoder(w).Encode(newBlogPost)
 	if err != nil {
@@ -357,12 +369,8 @@ func (app *Application) UpdatePostHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	if app.Cache != nil {
-		app.CacheMu.Lock()
-		app.Cache = blogPosts
-		app.CacheMu.Unlock()
-	}
-
+	// reinflate the cache with what has come out of the DB
+	app.Cache.LoadCache(blogPosts)
 	fmt.Fprintf(w, "Post updated successfully!")
 }
 
@@ -385,10 +393,8 @@ func (app *Application) DeletePostHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	app.CacheMu.Lock()
-	app.Cache = nil
-	app.CacheMu.Unlock()
-
+	app.Cache.invalidateCache()
+	fmt.Fprint(w, "Cache deleted")
 	fmt.Fprintf(w, "Post deleted successfully!")
 }
 

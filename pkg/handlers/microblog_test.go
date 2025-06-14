@@ -124,7 +124,11 @@ func TestSubmitHandler(t *testing.T) {
 	t.Parallel()
 
 	store := &repository.MemoryPostStore{}
-	app := handlers.NewApplication("", "", store, []*models.BlogPost{}, &sync.RWMutex{})
+	cache := &handlers.Cache{
+		BlogPosts: []*models.BlogPost{},
+		Mutex:     &sync.Mutex{},
+	}
+	app := handlers.NewApplication("", "", store, cache)
 	server := httptest.NewServer(http.HandlerFunc(app.Submit))
 	defer server.Close()
 
@@ -158,7 +162,11 @@ func TestUpdatePostHandler(t *testing.T) {
 	t.Parallel()
 
 	store := &repository.MemoryPostStore{}
-	app := handlers.NewApplication("", "", store, []*models.BlogPost{}, &sync.RWMutex{})
+	cache := &handlers.Cache{
+		BlogPosts: []*models.BlogPost{},
+		Mutex:     &sync.Mutex{},
+	}
+	app := handlers.NewApplication("", "", store, cache)
 	submitServer := httptest.NewServer(http.HandlerFunc(app.Submit))
 	defer submitServer.Close()
 
@@ -279,6 +287,11 @@ func newTestServer(t *testing.T, store repository.PostStore) net.Addr {
 	addr := netListener.Addr().String()
 	netListener.Close()
 
+	cache := &handlers.Cache{
+		BlogPosts: []*models.BlogPost{},
+		Mutex:     &sync.Mutex{},
+	}
+
 	mux := http.NewServeMux()
 	go func() {
 		err := handlers.RegisterRoutes(mux,
@@ -286,8 +299,7 @@ func newTestServer(t *testing.T, store repository.PostStore) net.Addr {
 			handlers.NewApplication("foo",
 				"foo",
 				store,
-				[]*models.BlogPost{},
-				&sync.RWMutex{}))
+				cache))
 		require.NoError(t, err)
 	}()
 
