@@ -185,7 +185,7 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 		app.CacheMu.Unlock()
 	}
 
-	// we are still holding the lock from line 172 here so we dont need to lock again.
+	app.CacheMu.RLock()
 	normalizedBlogPost := normalizeBlogPost(app.Cache)
 	app.CacheMu.RUnlock()
 
