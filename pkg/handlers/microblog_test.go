@@ -65,6 +65,61 @@ func TestListenAndServe_UsesGivenStore(t *testing.T) {
 	assert.Contains(t, got, "<h3 style=\"color: grey; font-size: 0.9em;\">1 June, 2025</h3>")
 }
 
+// RoundTripper is the custom RoundTripper that logs API calls
+type CountingRoundTripper struct {
+	Count int
+}
+
+// RoundTrip intercepts the HTTP request and logs the details
+func (r *CountingRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	r.Count++
+	// Perform the request
+	return http.DefaultTransport.RoundTrip(req)
+}
+
+func TestListenAndServe_CacheHit(t *testing.T) {
+	t.Parallel()
+
+	id := uuid.New()
+	blogPost := &models.BlogPost{ID: id, Title: "foo", Content: "boo", FormattedDate: "1 June, 2025"}
+	store := &repository.MemoryPostStore{BlogPosts: []*models.BlogPost{blogPost}}
+
+	addr := newTestServer(t, store)
+
+	countRoundTripper := &CountingRoundTripper{}
+	client := http.Client{
+		Transport: countRoundTripper,
+	}
+
+	resp, err := client.Get("http://" + addr.String())
+	require.NoError(t, err)
+	assert.Equal(t, 1, countRoundTripper.Count)
+
+	read, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	got := string(read)
+	assert.Contains(t, got, "<h2><a href=\"/blogpost?name=")
+	assert.Contains(t, got, "<p>foo</p>")
+	assert.Contains(t, got, "<p>boo</p>")
+	assert.Contains(t, got, "<h3 style=\"color: grey; font-size: 0.9em;\">1 June, 2025</h3>")
+
+	// test cache hit
+	resp, err = client.Get("http://" + addr.String())
+	require.NoError(t, err)
+
+	assert.Equal(t, 2, countRoundTripper.Count)
+
+	read, err = io.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	got = string(read)
+	assert.Contains(t, got, "<h2><a href=\"/blogpost?name=")
+	assert.Contains(t, got, "<p>foo</p>")
+	assert.Contains(t, got, "<p>boo</p>")
+	assert.Contains(t, got, "<h3 style=\"color: grey; font-size: 0.9em;\">1 June, 2025</h3>")
+}
+
 func TestSubmitHandler(t *testing.T) {
 	t.Parallel()
 
