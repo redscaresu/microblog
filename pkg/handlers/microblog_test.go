@@ -314,15 +314,12 @@ func TestGetBlogPostByName_ServesFromCacheOnSubsequentRequests(t *testing.T) {
 
 	blogPostURL := fmt.Sprintf("http://%s/blogpost?name=testtitle", addr.String())
 
-	countingTransport := &countingRoundTripper{}
-	cacheClient := &http.Client{Transport: countingTransport}
-
 	// First request
-	resp1, err := cacheClient.Get(blogPostURL)
+	resp1, err := http.Get(blogPostURL)
 	require.NoError(t, err)
 	defer resp1.Body.Close()
 	require.Equal(t, http.StatusOK, resp1.StatusCode)
-	assert.Equal(t, 1, countingTransport.Count)
+	assert.Equal(t, 1, store.AccessCounter)
 
 	body1, err := io.ReadAll(resp1.Body)
 	require.NoError(t, err)
@@ -331,11 +328,13 @@ func TestGetBlogPostByName_ServesFromCacheOnSubsequentRequests(t *testing.T) {
 	assert.Contains(t, content1, "Test Content")
 
 	// Second request should use cache
-	resp2, err := cacheClient.Get(blogPostURL)
+	resp2, err := http.Get(blogPostURL)
 	require.NoError(t, err)
 	defer resp2.Body.Close()
 	require.Equal(t, http.StatusOK, resp2.StatusCode)
-	assert.Equal(t, 2, countingTransport.Count)
+
+	//Confirm that we only accessed the database once and served this from cache.
+	assert.Equal(t, 1, store.AccessCounter)
 
 	body2, err := io.ReadAll(resp2.Body)
 	require.NoError(t, err)
