@@ -77,11 +77,12 @@ func run() error {
 	}
 	netListener.Close()
 
-	serveMux := http.NewServeMux()
+	mux := http.NewServeMux()
+	handlers.RegisterRoutes(mux, addr, app)
 
-	err = handlers.RegisterRoutes(serveMux, addr, app)
+	err = http.ListenAndServe(addr, mux)
 	if err != nil {
-		return fmt.Errorf("unable to register handlers due to error: %v", err)
+		return fmt.Errorf("unable to listen and serve due to error: %v", err)
 	}
 
 	return nil

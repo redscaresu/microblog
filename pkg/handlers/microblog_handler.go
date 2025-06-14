@@ -103,7 +103,7 @@ func NewApplication(userName, passWord string, postStore repository.PostStore, c
 	}
 }
 
-func RegisterRoutes(mux *http.ServeMux, addr string, app *Application) error {
+func RegisterRoutes(mux *http.ServeMux, addr string, app *Application) {
 	mux.HandleFunc("/", app.Home)
 	mux.HandleFunc("/blogpost", app.GetBlogPostByName)
 	mux.HandleFunc("/submit", app.basicAuth(app.Submit))
@@ -112,8 +112,6 @@ func RegisterRoutes(mux *http.ServeMux, addr string, app *Application) error {
 	mux.HandleFunc("/updatepost", app.basicAuth(app.UpdatePostHandler))
 	mux.HandleFunc("/deletepost", app.basicAuth(app.DeletePostHandler))
 	mux.HandleFunc("/rebuildcache", app.basicAuth(app.RebuildCacheHandler))
-	err := http.ListenAndServe(addr, mux)
-	return err
 }
 
 func (app *Application) basicAuth(next http.HandlerFunc) http.HandlerFunc {
