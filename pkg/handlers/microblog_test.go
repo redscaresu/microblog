@@ -210,6 +210,10 @@ func TestUpdatePostHandler(t *testing.T) {
 	assert.Equal(t, "Updated Title", updatedPost.Title)
 	assert.Equal(t, "Updated Content", updatedPost.Content)
 	assert.Equal(t, createdPost.ID, updatedPost.ID)
+
+	// Assert that the cache has been hydrated when a blogpost is updated
+	assert.Equal(t, "Updated Title", cache.BlogPosts[0].Title)
+	assert.Equal(t, "Updated Content", cache.BlogPosts[0].Content)
 }
 
 func TestUpdateHandlerBasicAuthError(t *testing.T) {
