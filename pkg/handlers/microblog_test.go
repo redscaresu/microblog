@@ -160,7 +160,7 @@ func TestSubmitHandler(t *testing.T) {
 
 	// Assert that the cache has been hydrated when a blogpost is submitted
 	assert.Equal(t, createdPost.Title, cache.BlogPosts[0].Title)
-	assert.Equal(t, createdPost.Title, cache.BlogPosts[0].Content)
+	assert.Equal(t, createdPost.Content, cache.BlogPosts[0].Content)
 }
 
 func TestUpdatePostHandler(t *testing.T) {
