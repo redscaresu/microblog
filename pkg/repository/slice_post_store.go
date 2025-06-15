@@ -8,7 +8,8 @@ import (
 )
 
 type MemoryPostStore struct {
-	BlogPosts []*models.BlogPost
+	BlogPosts     []*models.BlogPost
+	AccessCounter int
 }
 
 func (s *MemoryPostStore) GetAll() ([]*models.BlogPost, error) {
@@ -30,10 +31,16 @@ func (s *MemoryPostStore) GetByID(id uuid.UUID) (*models.BlogPost, error) {
 }
 
 func (s *MemoryPostStore) GetByName(name string) (*models.BlogPost, error) {
-	return models.NewBlogPost(), nil
+	for _, v := range s.BlogPosts {
+		if v.Name == name {
+			return v, nil
+		}
+	}
+	return &models.BlogPost{}, nil
 }
 
 func (s *MemoryPostStore) FetchLast10BlogPosts() ([]*models.BlogPost, error) {
+	s.AccessCounter++
 	return s.BlogPosts, nil
 }
 

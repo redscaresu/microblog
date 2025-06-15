@@ -4,10 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"microblog/pkg/handlers"
+	"microblog/pkg/models"
 	"microblog/pkg/repository"
 	"net"
 	"net/http"
 	"os"
+	"sync"
 )
 
 func main() {
@@ -59,9 +61,14 @@ func run() error {
 		return fmt.Errorf("unable to connect to database due to error: %v", err)
 	}
 
+	cache := &handlers.Cache{
+		BlogPosts: []*models.BlogPost{},
+		Mutex:     &sync.Mutex{},
+	}
 	app := handlers.NewApplication(os.Getenv("AUTH_USERNAME"),
 		os.Getenv("AUTH_PASSWORD"),
-		psStore)
+		psStore,
+		cache)
 
 	netListener, err := net.Listen("tcp", ":8080")
 	addr := netListener.Addr().String()
@@ -70,11 +77,12 @@ func run() error {
 	}
 	netListener.Close()
 
-	serveMux := http.NewServeMux()
+	mux := http.NewServeMux()
+	handlers.RegisterRoutes(mux, addr, app)
 
-	err = handlers.RegisterRoutes(serveMux, addr, app)
+	err = http.ListenAndServe(addr, mux)
 	if err != nil {
-		return fmt.Errorf("unable to register handlers due to error: %v", err)
+		return fmt.Errorf("unable to listen and serve due to error: %v", err)
 	}
 
 	return nil

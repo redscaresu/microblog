@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	htmltemplate "html/template"
@@ -56,6 +57,7 @@ const re = `[^a-zA-Z0-9\s]+`
 type Application struct {
 	Auth      *Auth
 	PostStore repository.PostStore
+	Cache     *Cache
 }
 
 type Auth struct {
@@ -63,18 +65,45 @@ type Auth struct {
 	Password string
 }
 
-func NewApplication(userName, passWord string, postStore repository.PostStore) *Application {
+type Cache struct {
+	BlogPosts []*models.BlogPost
+	Mutex     *sync.Mutex
+}
+
+func (c *Cache) Lock() {
+	c.Mutex.Lock()
+}
+
+func (c *Cache) Unlock() {
+	c.Mutex.Unlock()
+}
+
+// writing to the cache
+func (c *Cache) LoadCache(blogPosts []*models.BlogPost) {
+	c.Mutex.Lock()
+	c.BlogPosts = blogPosts
+	c.Mutex.Unlock()
+}
+
+func (c *Cache) InvalidateCache() {
+	c.Mutex.Lock()
+	c.BlogPosts = nil
+	c.Mutex.Unlock()
+}
+
+func NewApplication(userName, passWord string, postStore repository.PostStore, cache *Cache) *Application {
+
 	return &Application{
 		Auth: &Auth{
 			UserName: userName,
 			Password: passWord,
 		},
 		PostStore: postStore,
+		Cache:     cache,
 	}
-
 }
 
-func RegisterRoutes(mux *http.ServeMux, addr string, app *Application) error {
+func RegisterRoutes(mux *http.ServeMux, addr string, app *Application) {
 	mux.HandleFunc("/", app.Home)
 	mux.HandleFunc("/blogpost", app.GetBlogPostByName)
 	mux.HandleFunc("/submit", app.basicAuth(app.Submit))
@@ -82,8 +111,7 @@ func RegisterRoutes(mux *http.ServeMux, addr string, app *Application) error {
 	mux.HandleFunc("/newpost", app.basicAuth(app.NewPostHandler))
 	mux.HandleFunc("/updatepost", app.basicAuth(app.UpdatePostHandler))
 	mux.HandleFunc("/deletepost", app.basicAuth(app.DeletePostHandler))
-	err := http.ListenAndServe(addr, mux)
-	return err
+	mux.HandleFunc("/rebuildcache", app.basicAuth(app.RebuildCacheHandler))
 }
 
 func (app *Application) basicAuth(next http.HandlerFunc) http.HandlerFunc {
@@ -163,14 +191,21 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	blogPosts, err := app.PostStore.FetchLast10BlogPosts()
-	if err != nil {
-		log.Printf("Error fetching last 10 blog posts: %v", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	if len(app.Cache.BlogPosts) < 1 {
+		// cache miss, lets fetch from the database
+		unNormalizedblogPosts, err := app.PostStore.FetchLast10BlogPosts()
+		if err != nil {
+			log.Printf("Error fetching last 10 blog posts: %v", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		// inflate the cache with what has come from the DB
+		app.Cache.LoadCache(unNormalizedblogPosts)
 	}
 
-	normalizedBlogPost := normalizeBlogPost(blogPosts)
+	// if we miss the miss the cache then app.Cache is initialized from line 183
+	// if we hit the cache then we just immediately use the current app.Cache
+	normalizedBlogPost := normalizeBlogPost(app.Cache.BlogPosts)
 
 	err = tpl.Execute(w, normalizedBlogPost)
 	if err != nil {
@@ -205,15 +240,56 @@ func (app *Application) GetBlogPostByName(w http.ResponseWriter, r *http.Request
 	queryParams := r.URL.Query()
 	name := queryParams.Get("name")
 
-	blog, err := app.PostStore.GetByName(name)
+	app.Cache.Lock()
+	if len(app.Cache.BlogPosts) > 0 {
+		for _, cachedPost := range app.Cache.BlogPosts {
+			//blog exists in cache
+			if cachedPost.Name == name {
+				blog := cachedPost
+				blog.Content = RenderMarkdown(blog.Content)
+				blog.Title = RenderMarkdown(blog.Title)
+				log.Printf("Processed Content for %s: %s", name, blog.Content)
+
+				tpl, err := texttemplate.New("blogpost.gohtml").Funcs(funcMap).ParseFS(templates, "templates/blogpost.gohtml")
+				if err != nil {
+					log.Printf("Error parsing blogpost.gohtml template: %v", err)
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+
+				err = tpl.Execute(w, blog)
+				if err != nil {
+					log.Printf("Error executing blogpost.gohtml template: %v", err)
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+			}
+		}
+		app.Cache.Unlock()
+		return
+	}
+	// unlock the cache from the above.
+	app.Cache.Unlock()
+
+	// cache miss, lets fetch from the database
+	unNormalizedblogPosts, err := app.PostStore.FetchLast10BlogPosts()
 	if err != nil {
-		log.Printf("Error getting blog post by name %s: %v", name, err)
+		log.Printf("Error fetching last 10 blog posts: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	log.Printf("Original Content for %s: %s", name, blog.Content)
+	// inflate the cache with what has come from the DB
+	app.Cache.LoadCache(unNormalizedblogPosts)
 
+	var blog *models.BlogPost
+	for _, cachedBlogPost := range app.Cache.BlogPosts {
+		if cachedBlogPost.Name == name {
+			blog = cachedBlogPost
+		}
+	}
+
+	log.Printf("Original Content for %s: %s", name, blog.Content)
 	blog.Content = RenderMarkdown(blog.Content)
 	blog.Title = RenderMarkdown(blog.Title)
 
@@ -280,6 +356,15 @@ func (app *Application) Submit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	blogPosts, err := app.PostStore.FetchLast10BlogPosts()
+	if err != nil {
+		http.Error(w, "unable to fetch last 10 blog posts", http.StatusInternalServerError)
+		return
+	}
+
+	// rehydrate the cache with what has come out of the DB
+	app.Cache.LoadCache(blogPosts)
+
 	err = json.NewEncoder(w).Encode(newBlogPost)
 	if err != nil {
 		log.Printf("Error encoding new blog post: %v", err)
@@ -287,6 +372,7 @@ func (app *Application) Submit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fmt.Fprint(w, "cache reloaded")
 	fmt.Fprintf(w, "Post submitted successfully!")
 }
 
@@ -326,6 +412,15 @@ func (app *Application) UpdatePostHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	blogPosts, err := app.PostStore.FetchLast10BlogPosts()
+	if err != nil {
+		http.Error(w, "unable to fetch last 10 blog posts", http.StatusInternalServerError)
+		return
+	}
+
+	// reinflate the cache with what has come out of the DB
+	app.Cache.LoadCache(blogPosts)
+	fmt.Fprintf(w, "cache reloaded")
 	fmt.Fprintf(w, "Post updated successfully!")
 }
 
@@ -348,33 +443,69 @@ func (app *Application) DeletePostHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	app.Cache.InvalidateCache()
+	fmt.Fprint(w, "Cache deleted")
 	fmt.Fprintf(w, "Post deleted successfully!")
 }
 
-func normalizeBlogPost(blogPosts []*models.BlogPost) []*models.BlogPost {
+func (app *Application) RebuildCacheHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	app.Cache.InvalidateCache()
+	log.Println("Cache invalidated.")
+
+	allPosts, err := app.PostStore.FetchLast10BlogPosts()
+	if err != nil {
+		log.Printf("Error fetching posts from store to rebuild cache: %v", err)
+		http.Error(w, "Failed to rebuild cache: could not fetch posts", http.StatusInternalServerError)
+		return
+	}
+
+	app.Cache.LoadCache(allPosts)
+	log.Printf("Cache rebuilt successfully with %d posts.", len(allPosts))
+
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, "Cache invalidated and rebuilt successfully with %d posts.\n", len(allPosts))
+}
+
+func normalizeBlogPost(unNormalizedBlogPosts []*models.BlogPost) []*models.BlogPost {
 	preview := 300
-	for i := range blogPosts {
+
+	normalizedBlogPosts := make([]*models.BlogPost, len(unNormalizedBlogPosts))
+
+	for i := range unNormalizedBlogPosts {
+		normalizedBlogPosts[i] = &models.BlogPost{
+			ID:            unNormalizedBlogPosts[i].ID,
+			Title:         unNormalizedBlogPosts[i].Title,
+			Content:       unNormalizedBlogPosts[i].Content,
+			Name:          unNormalizedBlogPosts[i].Name,
+			CreatedAt:     unNormalizedBlogPosts[i].CreatedAt,
+			UpdatedAt:     unNormalizedBlogPosts[i].UpdatedAt,
+			FormattedDate: unNormalizedBlogPosts[i].FormattedDate,
+		}
 		var contentBuf bytes.Buffer
-		if err := md.Convert([]byte(blogPosts[i].Content), &contentBuf); err != nil {
+		if err := md.Convert([]byte(normalizedBlogPosts[i].Content), &contentBuf); err != nil {
 			log.Printf("Error converting blog post content to HTML: %v\n", err)
 		} else {
-			blogPosts[i].Content = contentBuf.String()
+			normalizedBlogPosts[i].Content = contentBuf.String()
 		}
-
 		var titleBuf bytes.Buffer
-		if err := md.Convert([]byte(blogPosts[i].Title), &titleBuf); err != nil {
+		if err := md.Convert([]byte(normalizedBlogPosts[i].Title), &titleBuf); err != nil {
 			log.Printf("Error converting blog post title to HTML: %v\n", err)
 		} else {
-			blogPosts[i].Title = titleBuf.String()
+			normalizedBlogPosts[i].Title = titleBuf.String()
 		}
 	}
 
-	for i := range blogPosts {
-		if len(blogPosts[i].Content) > preview {
-			blogPosts[i].Content = blogPosts[i].Content[:preview] + "..."
+	for i := range normalizedBlogPosts {
+		if len(normalizedBlogPosts[i].Content) > preview {
+			normalizedBlogPosts[i].Content = unNormalizedBlogPosts[i].Content[:preview] + "..."
 		}
 	}
-	return blogPosts
+	return normalizedBlogPosts
 }
 
 func formattedDate(now time.Time) string {
