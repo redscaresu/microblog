@@ -22,7 +22,7 @@ resource "scaleway_container" "main" {
   port           = 8080
   cpu_limit      = 70
   memory_limit   = 128
-  min_scale      = 0
+  min_scale      = 1
   max_scale      = 1
   timeout        = 600
   privacy        = "public"
