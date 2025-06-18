@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"microblog/pkg/cache"
 	"microblog/pkg/handlers"
 	"microblog/pkg/models"
 	"microblog/pkg/repository"
@@ -61,10 +62,8 @@ func run() error {
 		return fmt.Errorf("unable to connect to database due to error: %v", err)
 	}
 
-	cache := &handlers.Cache{
-		BlogPosts: []*models.BlogPost{},
-		Mutex:     &sync.Mutex{},
-	}
+	cache := cache.New([]*models.BlogPost{}, &sync.Mutex{})
+
 	app := handlers.NewApplication(os.Getenv("AUTH_USERNAME"),
 		os.Getenv("AUTH_PASSWORD"),
 		psStore,
@@ -78,7 +77,7 @@ func run() error {
 	netListener.Close()
 
 	mux := http.NewServeMux()
-	handlers.RegisterRoutes(mux, addr, app)
+	handlers.RegisterRoutes(mux, app)
 
 	err = http.ListenAndServe(addr, mux)
 	if err != nil {
