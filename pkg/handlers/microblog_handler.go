@@ -173,15 +173,24 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		normalizedBlogPosts := normalizeBlogPost(unNormalizedblogPosts)
+
 		// inflate the cache with what has come from the DB
-		app.Cache.LoadCache(unNormalizedblogPosts)
+		app.Cache.LoadCache(normalizedBlogPosts)
+
+		err = tpl.Execute(w, normalizedBlogPosts)
+		if err != nil {
+			log.Printf("Error executing home.gohtml template: %v", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	// if we miss the miss the cache then app.Cache is initialized from line 183
 	// if we hit the cache then we just immediately use the current app.Cache
-	normalizedBlogPost := normalizeBlogPost(app.Cache.BlogPosts)
+	normalizedBlogPosts := normalizeBlogPost(app.Cache.BlogPosts)
 
-	err = tpl.Execute(w, normalizedBlogPost)
+	err = tpl.Execute(w, normalizedBlogPosts)
 	if err != nil {
 		log.Printf("Error executing home.gohtml template: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
