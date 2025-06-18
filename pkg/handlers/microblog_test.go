@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"microblog/pkg/cache"
 	"microblog/pkg/handlers"
 	"microblog/pkg/models"
 	"microblog/pkg/repository"
@@ -49,10 +50,7 @@ func TestListenAndServe_NoCache(t *testing.T) {
 	id := uuid.New()
 	blogPost := &models.BlogPost{ID: id, Title: "foo", Content: "boo", FormattedDate: "1 June, 2025"}
 	store := &repository.MemoryPostStore{BlogPosts: []*models.BlogPost{blogPost}}
-	cache := &handlers.Cache{
-		BlogPosts: []*models.BlogPost{},
-		Mutex:     &sync.Mutex{},
-	}
+	cache := cache.New([]*models.BlogPost{}, &sync.Mutex{})
 
 	server := newTestServer(t, store, cache)
 	defer server.Close()
@@ -76,10 +74,7 @@ func TestListenAndServe_CacheHit(t *testing.T) {
 	id := uuid.New()
 	blogPost := &models.BlogPost{ID: id, Title: "foo", Content: "boo", FormattedDate: "1 June, 2025"}
 	store := &repository.MemoryPostStore{BlogPosts: []*models.BlogPost{blogPost}}
-	cache := &handlers.Cache{
-		BlogPosts: []*models.BlogPost{},
-		Mutex:     &sync.Mutex{},
-	}
+	cache := cache.New([]*models.BlogPost{}, &sync.Mutex{})
 
 	server := newTestServer(t, store, cache)
 	defer server.Close()
@@ -127,10 +122,8 @@ func TestSubmitHandler(t *testing.T) {
 	t.Parallel()
 
 	store := &repository.MemoryPostStore{}
-	cache := &handlers.Cache{
-		BlogPosts: []*models.BlogPost{},
-		Mutex:     &sync.Mutex{},
-	}
+	cache := cache.New([]*models.BlogPost{}, &sync.Mutex{})
+
 	server := newTestServer(t, store, cache)
 	defer server.Close()
 
@@ -161,10 +154,8 @@ func TestUpdatePostHandler(t *testing.T) {
 	t.Parallel()
 
 	store := &repository.MemoryPostStore{}
-	cache := &handlers.Cache{
-		BlogPosts: []*models.BlogPost{},
-		Mutex:     &sync.Mutex{},
-	}
+	cache := cache.New([]*models.BlogPost{}, &sync.Mutex{})
+
 	server := newTestServer(t, store, cache)
 	defer server.Close()
 
@@ -220,10 +211,8 @@ func TestUpdateHandlerBasicAuthError(t *testing.T) {
 	t.Parallel()
 
 	store := &repository.MemoryPostStore{}
-	cache := &handlers.Cache{
-		BlogPosts: []*models.BlogPost{},
-		Mutex:     &sync.Mutex{},
-	}
+	cache := cache.New([]*models.BlogPost{}, &sync.Mutex{})
+
 	server := newTestServer(t, store, cache)
 	defer server.Close()
 
@@ -241,10 +230,8 @@ func TestEditPostHandlerBasicAuthError(t *testing.T) {
 	t.Parallel()
 
 	store := &repository.MemoryPostStore{}
-	cache := &handlers.Cache{
-		BlogPosts: []*models.BlogPost{},
-		Mutex:     &sync.Mutex{},
-	}
+	cache := cache.New([]*models.BlogPost{}, &sync.Mutex{})
+
 	server := newTestServer(t, store, cache)
 	defer server.Close()
 
@@ -262,10 +249,8 @@ func TestSubmitHandlerBasicAuthError(t *testing.T) {
 	t.Parallel()
 
 	store := &repository.MemoryPostStore{}
-	cache := &handlers.Cache{
-		BlogPosts: []*models.BlogPost{},
-		Mutex:     &sync.Mutex{},
-	}
+	cache := cache.New([]*models.BlogPost{}, &sync.Mutex{})
+
 	server := newTestServer(t, store, cache)
 	defer server.Close()
 
@@ -305,10 +290,8 @@ func TestGetBlogPostByName_ServesFromCacheOnSubsequentRequests(t *testing.T) {
 	id := uuid.New()
 	blogPost := &models.BlogPost{ID: id, Name: "testtitle", Title: "Test Title", Content: "Test Content", FormattedDate: "1 June, 2025"}
 	store := &repository.MemoryPostStore{BlogPosts: []*models.BlogPost{blogPost}}
-	cache := &handlers.Cache{
-		BlogPosts: []*models.BlogPost{},
-		Mutex:     &sync.Mutex{},
-	}
+	cache := cache.New([]*models.BlogPost{}, &sync.Mutex{})
+
 	server := newTestServer(t, store, cache)
 	defer server.Close()
 
@@ -351,10 +334,7 @@ func TestGetBlogPostByName_NoCache(t *testing.T) {
 	id := uuid.New()
 	blogPost := &models.BlogPost{ID: id, Name: "testtitle", Title: "Test Title", Content: "Test Content", FormattedDate: "1 June, 2025"}
 	store := &repository.MemoryPostStore{BlogPosts: []*models.BlogPost{blogPost}}
-	cache := &handlers.Cache{
-		BlogPosts: []*models.BlogPost{},
-		Mutex:     &sync.Mutex{},
-	}
+	cache := cache.New([]*models.BlogPost{}, &sync.Mutex{})
 
 	server := newTestServer(t, store, cache)
 	defer server.Close()
@@ -376,10 +356,10 @@ func TestGetBlogPostByName_NoCache(t *testing.T) {
 	assert.Contains(t, content1, "Test Content")
 }
 
-func newTestServer(t *testing.T, store repository.PostStore, cache *handlers.Cache) *httptest.Server {
+func newTestServer(t *testing.T, store repository.PostStore, cache *cache.Cache) *httptest.Server {
 	t.Helper()
 	mux := http.NewServeMux()
-	handlers.RegisterRoutes(mux, "", handlers.NewApplication("foo", "foo", store, cache))
+	handlers.RegisterRoutes(mux, handlers.NewApplication("foo", "foo", store, cache))
 	server := httptest.NewServer(mux)
 	return server
 }

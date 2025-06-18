@@ -8,12 +8,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"microblog/pkg/cache"
 	"microblog/pkg/models"
 	"microblog/pkg/repository"
 	"net/http"
 	"regexp"
 	"strings"
-	"sync"
 	"time"
 
 	htmltemplate "html/template"
@@ -57,7 +57,7 @@ const re = `[^a-zA-Z0-9\s]+`
 type Application struct {
 	Auth      *Auth
 	PostStore repository.PostStore
-	Cache     *Cache
+	Cache     *cache.Cache
 }
 
 type Auth struct {
@@ -65,33 +65,7 @@ type Auth struct {
 	Password string
 }
 
-type Cache struct {
-	BlogPosts []*models.BlogPost
-	Mutex     *sync.Mutex
-}
-
-func (c *Cache) Lock() {
-	c.Mutex.Lock()
-}
-
-func (c *Cache) Unlock() {
-	c.Mutex.Unlock()
-}
-
-// writing to the cache
-func (c *Cache) LoadCache(blogPosts []*models.BlogPost) {
-	c.Mutex.Lock()
-	c.BlogPosts = blogPosts
-	c.Mutex.Unlock()
-}
-
-func (c *Cache) InvalidateCache() {
-	c.Mutex.Lock()
-	c.BlogPosts = nil
-	c.Mutex.Unlock()
-}
-
-func NewApplication(userName, passWord string, postStore repository.PostStore, cache *Cache) *Application {
+func NewApplication(userName, passWord string, postStore repository.PostStore, cache *cache.Cache) *Application {
 
 	return &Application{
 		Auth: &Auth{
@@ -103,7 +77,7 @@ func NewApplication(userName, passWord string, postStore repository.PostStore, c
 	}
 }
 
-func RegisterRoutes(mux *http.ServeMux, addr string, app *Application) {
+func RegisterRoutes(mux *http.ServeMux, app *Application) {
 	mux.HandleFunc("/", app.Home)
 	mux.HandleFunc("/blogpost", app.GetBlogPostByName)
 	mux.HandleFunc("/submit", app.basicAuth(app.Submit))
