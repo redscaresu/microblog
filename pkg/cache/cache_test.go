@@ -35,7 +35,7 @@ func TestLoadCache(t *testing.T) {
 	}
 
 	cache := cache.New([]*models.BlogPost{}, &sync.Mutex{})
-	cache.LoadCache([]*models.BlogPost{blogPost1, blogPost2})
+	cache.Load([]*models.BlogPost{blogPost1, blogPost2})
 
 	assert.Equal(t, []*models.BlogPost{blogPost1, blogPost2}, cache.BlogPosts)
 }
@@ -51,7 +51,7 @@ func TestInvalidateCache(t *testing.T) {
 		},
 		&sync.Mutex{})
 
-	c.InvalidateCache()
+	c.Invalidate()
 	assert.Nil(t, c.BlogPosts)
 }
 
@@ -66,11 +66,11 @@ func TestConcurrentLoadAndInvalidate(t *testing.T) {
 
 	done := make(chan struct{})
 	go func() {
-		c.LoadCache(posts)
+		c.Load(posts)
 		done <- struct{}{}
 	}()
 	go func() {
-		c.InvalidateCache()
+		c.Invalidate()
 		done <- struct{}{}
 	}()
 	<-done
