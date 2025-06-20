@@ -165,6 +165,7 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var blogPosts []*models.BlogPost
 	if len(app.Cache.BlogPosts) < 1 {
 		// cache miss, lets fetch from the database
 		unNormalizedblogPosts, err := app.PostStore.FetchLast10BlogPosts()
@@ -173,15 +174,17 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		// inflate the cache with what has come from the DB
-		app.Cache.LoadCache(unNormalizedblogPosts)
+		// inflate the cache with normalized posts
+		normalizedBlogPosts := normalizeBlogPost(unNormalizedblogPosts)
+		app.Cache.Load(normalizedBlogPosts)
+		blogPosts = normalizedBlogPosts
+	} else {
+		//cache is already hydrated
+		blogPosts = app.Cache.GetAll()
 	}
 
-	// if we miss the miss the cache then app.Cache is initialized from line 183
-	// if we hit the cache then we just immediately use the current app.Cache
-	normalizedBlogPost := normalizeBlogPost(app.Cache.BlogPosts)
-
-	err = tpl.Execute(w, normalizedBlogPost)
+	// cache hit - posts are already normalized, just use them directly from the cache
+	err = tpl.Execute(w, blogPosts)
 	if err != nil {
 		log.Printf("Error executing home.gohtml template: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -254,7 +257,7 @@ func (app *Application) GetBlogPostByName(w http.ResponseWriter, r *http.Request
 	}
 
 	// inflate the cache with what has come from the DB
-	app.Cache.LoadCache(unNormalizedblogPosts)
+	app.Cache.Load(unNormalizedblogPosts)
 
 	var blog *models.BlogPost
 	for _, cachedBlogPost := range app.Cache.BlogPosts {
@@ -336,8 +339,10 @@ func (app *Application) Submit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Normalize before caching (same as Home handler)
+	normalizedBlogPosts := normalizeBlogPost(blogPosts)
 	// rehydrate the cache with what has come out of the DB
-	app.Cache.LoadCache(blogPosts)
+	app.Cache.Load(normalizedBlogPosts)
 
 	err = json.NewEncoder(w).Encode(newBlogPost)
 	if err != nil {
@@ -392,8 +397,10 @@ func (app *Application) UpdatePostHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// reinflate the cache with what has come out of the DB
-	app.Cache.LoadCache(blogPosts)
+	// Normalize before caching (same as Home handler)
+	normalizedBlogPosts := normalizeBlogPost(blogPosts)
+	// rehydrate the cache with what has come out of the DB
+	app.Cache.Load(normalizedBlogPosts)
 	fmt.Fprintf(w, "cache reloaded")
 	fmt.Fprintf(w, "Post updated successfully!")
 }
@@ -417,7 +424,7 @@ func (app *Application) DeletePostHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	app.Cache.InvalidateCache()
+	app.Cache.Invalidate()
 	fmt.Fprint(w, "Cache deleted")
 	fmt.Fprintf(w, "Post deleted successfully!")
 }
@@ -428,7 +435,7 @@ func (app *Application) RebuildCacheHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	app.Cache.InvalidateCache()
+	app.Cache.Invalidate()
 	log.Println("Cache invalidated.")
 
 	allPosts, err := app.PostStore.FetchLast10BlogPosts()
@@ -438,7 +445,7 @@ func (app *Application) RebuildCacheHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	app.Cache.LoadCache(allPosts)
+	app.Cache.Load(allPosts)
 	log.Printf("Cache rebuilt successfully with %d posts.", len(allPosts))
 
 	w.WriteHeader(http.StatusOK)
