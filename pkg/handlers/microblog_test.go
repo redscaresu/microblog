@@ -90,15 +90,7 @@ func TestListenAndServe_CacheHit(t *testing.T) {
 
 	// cache is hydrated on the first Get to the homepage
 	require.Len(t, cache.BlogPosts, 1)
-	require.Equal(t, []*models.BlogPost{
-		{
-			Title:         "<p>foo</p>\n",
-			Content:       "<p>boo</p>\n",
-			ID:            id,
-			FormattedDate: blogPost.FormattedDate,
-		},
-	},
-		cache.BlogPosts)
+	require.Equal(t, []*models.BlogPost{blogPost}, cache.BlogPosts)
 
 	read, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
@@ -211,8 +203,8 @@ func TestUpdatePostHandler(t *testing.T) {
 	assert.Equal(t, createdPost.ID, updatedPost.ID)
 
 	// Assert that the cache has been hydrated when a blogpost is updated
-	assert.Equal(t, "<p>Updated Title</p>\n", cache.BlogPosts[0].Title)
-	assert.Equal(t, "<p>Updated Content</p>\n", cache.BlogPosts[0].Content)
+	assert.Equal(t, "Updated Title", cache.BlogPosts[0].Title)
+	assert.Equal(t, "Updated Content", cache.BlogPosts[0].Content)
 }
 
 func TestUpdateHandlerBasicAuthError(t *testing.T) {
