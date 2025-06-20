@@ -35,7 +35,7 @@ func TestLoadCache(t *testing.T) {
 	}
 
 	cache := cache.New([]*models.BlogPost{}, &sync.Mutex{})
-	cache.Load([]*models.BlogPost{blogPost1, blogPost2})
+	cache.LoadCache([]*models.BlogPost{blogPost1, blogPost2})
 
 	assert.Equal(t, []*models.BlogPost{blogPost1, blogPost2}, cache.BlogPosts)
 }
@@ -51,7 +51,7 @@ func TestInvalidateCache(t *testing.T) {
 		},
 		&sync.Mutex{})
 
-	c.Invalidate()
+	c.InvalidateCache()
 	assert.Nil(t, c.BlogPosts)
 }
 
@@ -66,63 +66,13 @@ func TestConcurrentLoadAndInvalidate(t *testing.T) {
 
 	done := make(chan struct{})
 	go func() {
-		c.Load(posts)
+		c.LoadCache(posts)
 		done <- struct{}{}
 	}()
 	go func() {
-		c.Invalidate()
+		c.InvalidateCache()
 		done <- struct{}{}
 	}()
 	<-done
 	<-done
-}
-
-func TestGetAll(t *testing.T) {
-	id1 := uuid.New()
-	id2 := uuid.New()
-	blogPost1 := &models.BlogPost{
-		ID:            id1,
-		Title:         "first title",
-		Content:       "first content",
-		Name:          "first name",
-		CreatedAt:     time.Now(),
-		UpdatedAt:     time.Now(),
-		FormattedDate: "1 June, 2025",
-	}
-	blogPost2 := &models.BlogPost{
-		ID:            id2,
-		Title:         "second title",
-		Content:       "second content",
-		Name:          "second name",
-		CreatedAt:     time.Now(),
-		UpdatedAt:     time.Now(),
-		FormattedDate: "2 June, 2025",
-	}
-
-	t.Run("EmptyCache", func(t *testing.T) {
-		cache := cache.New([]*models.BlogPost{}, &sync.Mutex{})
-		result := cache.GetAll()
-		assert.Empty(t, result)
-	})
-
-	t.Run("CacheWithPosts", func(t *testing.T) {
-		cache := cache.New([]*models.BlogPost{blogPost1, blogPost2}, &sync.Mutex{})
-		result := cache.GetAll()
-		assert.Equal(t, []*models.BlogPost{blogPost1, blogPost2}, result)
-		assert.Len(t, result, 2)
-	})
-
-	t.Run("GetAllAfterLoad", func(t *testing.T) {
-		cache := cache.New([]*models.BlogPost{}, &sync.Mutex{})
-		cache.Load([]*models.BlogPost{blogPost1, blogPost2})
-		result := cache.GetAll()
-		assert.Equal(t, []*models.BlogPost{blogPost1, blogPost2}, result)
-	})
-
-	t.Run("GetAllAfterInvalidate", func(t *testing.T) {
-		cache := cache.New([]*models.BlogPost{blogPost1, blogPost2}, &sync.Mutex{})
-		cache.Invalidate()
-		result := cache.GetAll()
-		assert.Nil(t, result)
-	})
 }

@@ -26,21 +26,14 @@ func (c *Cache) Unlock() {
 	c.Mutex.Unlock()
 }
 
-func (c *Cache) Load(blogPosts []*models.BlogPost) {
+func (c *Cache) LoadCache(blogPosts []*models.BlogPost) {
 	c.Mutex.Lock()
 	c.BlogPosts = blogPosts
 	c.Mutex.Unlock()
 }
 
-func (c *Cache) Invalidate() {
+func (c *Cache) InvalidateCache() {
 	c.Mutex.Lock()
 	c.BlogPosts = nil
 	c.Mutex.Unlock()
-}
-
-func (c *Cache) GetAll() []*models.BlogPost {
-	c.Mutex.Lock()
-	blogPosts := c.BlogPosts
-	c.Mutex.Unlock()
-	return blogPosts
 }
