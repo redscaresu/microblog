@@ -6,6 +6,8 @@ on:
       - ci
     types:
       - completed
+    branches:
+      - main
   workflow_dispatch:
  
 env:
