@@ -505,10 +505,10 @@ func RenderMarkdown(content string) string {
 	}
 	parsedContent := buf.String()
 
-	log.Println("=== MARKDOWN DEBUG ===")
+	log.Println("=== MARKDOWN DEBUG ====")
 	log.Println("Input:", content)
 	log.Println("Output:", parsedContent)
-	log.Println("======================")
+	log.Println("=======================")
 
 	return parsedContent
 }
