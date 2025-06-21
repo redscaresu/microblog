@@ -18,7 +18,7 @@ resource "scaleway_container" "main" {
   name           = "blog"
   description    = "my blog"
   namespace_id   = scaleway_container_namespace.main.id
-  registry_image = "${scaleway_container_namespace.main.registry_endpoint}/microblog:latest"
+  registry_image = var.container_image_tag
   port           = 8080
   cpu_limit      = 70
   memory_limit   = 128
@@ -37,6 +37,7 @@ resource "scaleway_container" "main" {
   environment_variables = {
     "AUTH_USERNAME" = "admin",
   }
+
 
   secret_environment_variables = {
     "DB_PASSWORD"   = scaleway_iam_api_key.api_key.secret_key

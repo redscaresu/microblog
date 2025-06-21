@@ -31,3 +31,13 @@ jobs:
             ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/microblog:latest
             ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/microblog:${{ github.run_number }}
             ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/microblog:${{ github.sha }}
+          outputs: type=image,name=target,annotation-index.org.opencontainers.image.description=My multi-arch image
+      - name: Write image info to file
+        run: |
+          echo "IMAGE_TAG=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/microblog:${{ github.sha }}" > image_info.txt
+          echo "IMAGE_SHA=${{ github.sha }}" >> image_info.txt
+      - name: Upload image info
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-info
+          path: image_info.txt
