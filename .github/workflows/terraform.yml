@@ -6,6 +6,8 @@ on:
       - ci
     types:
       - completed
+    branches:
+      - main
   workflow_dispatch:
  
 env:
@@ -19,7 +21,7 @@ env:
  
 jobs:
   deploy:
-    if: ${{ github.event.workflow_run.conclusion == 'success' && github.ref == 'refs/heads/main' }} # Only run if `ci.yaml` succeeded
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     defaults:
         run:
