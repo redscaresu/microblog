@@ -94,7 +94,7 @@
             <div class="blog-post">
                 <h3 style="color: grey; font-size: 0.9em;">{{.FormattedDate}}</h3> <!-- Smaller and grey -->
                 <h2><a href="/blogpost?name={{urlquery .Name}}">{{.Title}}</a></h2>
-                <p>{{.Content}}</p>
+                <div>{{.Content | truncateChars 300}}</div>
             </div>
         {{ end }}
     </div>
