@@ -1,4 +1,8 @@
-on: [pull_request]
+on: 
+  pull_request:
+  push:
+    branches:
+      - main
 name: Tests
 
 jobs:
@@ -21,4 +25,3 @@ jobs:
         env:
           DOCKER_HOST: tcp://localhost:5432
         run: go test ./... -v
-
