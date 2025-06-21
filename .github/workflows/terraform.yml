@@ -30,6 +30,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Download image info
+        uses: actions/download-artifact@v4
+        with:
+          name: image-info
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: Set image tag variable
+        run: |
+          source ../image_info.txt
+          echo "TF_VAR_container_image_tag=${IMAGE_TAG}" >> $GITHUB_ENV
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
