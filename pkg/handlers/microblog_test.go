@@ -48,7 +48,12 @@ func TestListenAndServe_NoCache(t *testing.T) {
 	t.Parallel()
 
 	id := uuid.New()
-	blogPost := &models.BlogPost{ID: id, Title: "foo", Content: "boo", FormattedDate: "1 June, 2025"}
+	blogPost := &models.BlogPost{
+		ID:            id,
+		Name:          "foo",
+		Title:         "foo",
+		Content:       "boo",
+		FormattedDate: "1 June, 2025"}
 	store := &repository.MemoryPostStore{BlogPosts: []*models.BlogPost{blogPost}}
 	cache := cache.New([]*models.BlogPost{}, &sync.Mutex{})
 
@@ -62,7 +67,7 @@ func TestListenAndServe_NoCache(t *testing.T) {
 	require.NoError(t, err)
 
 	got := string(read)
-	assert.Contains(t, got, "<h2><a href=\"/blogpost?name=")
+	assert.Contains(t, got, "<h2><a href=\"/post/foo")
 	assert.Contains(t, got, "<p>foo</p>")
 	assert.Contains(t, got, "<p>boo</p>")
 	assert.Contains(t, got, "<h3 style=\"color: grey; font-size: 0.9em;\">1 June, 2025</h3>")
@@ -72,7 +77,12 @@ func TestListenAndServe_CacheHit(t *testing.T) {
 	t.Parallel()
 
 	id := uuid.New()
-	blogPost := &models.BlogPost{ID: id, Title: "foo", Content: "boo", FormattedDate: "1 June, 2025"}
+	blogPost := &models.BlogPost{
+		ID:            id,
+		Name:          "foo",
+		Title:         "foo",
+		Content:       "boo",
+		FormattedDate: "1 June, 2025"}
 	store := &repository.MemoryPostStore{BlogPosts: []*models.BlogPost{blogPost}}
 	cache := cache.New([]*models.BlogPost{}, &sync.Mutex{})
 
@@ -93,6 +103,7 @@ func TestListenAndServe_CacheHit(t *testing.T) {
 	require.Equal(t, []*models.BlogPost{
 		{
 			Title:         "<p>foo</p>\n",
+			Name:          "foo",
 			Content:       "<p>boo</p>\n",
 			ID:            id,
 			FormattedDate: blogPost.FormattedDate,
@@ -104,7 +115,7 @@ func TestListenAndServe_CacheHit(t *testing.T) {
 	require.NoError(t, err)
 
 	got := string(read)
-	assert.Contains(t, got, "<h2><a href=\"/blogpost?name=")
+	assert.Contains(t, got, "<h2><a href=\"/post/foo")
 	assert.Contains(t, got, "<p>foo</p>")
 	assert.Contains(t, got, "<p>boo</p>")
 	assert.Contains(t, got, "<h3 style=\"color: grey; font-size: 0.9em;\">1 June, 2025</h3>")
@@ -120,7 +131,7 @@ func TestListenAndServe_CacheHit(t *testing.T) {
 	require.NoError(t, err)
 
 	got = string(read)
-	assert.Contains(t, got, "<h2><a href=\"/blogpost?name=")
+	assert.Contains(t, got, "<h2><a href=\"/post/foo")
 	assert.Contains(t, got, "<p>foo</p>")
 	assert.Contains(t, got, "<p>boo</p>")
 	assert.Contains(t, got, "<h3 style=\"color: grey; font-size: 0.9em;\">1 June, 2025</h3>")

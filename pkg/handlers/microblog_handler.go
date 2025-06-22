@@ -80,8 +80,11 @@ func NewApplication(userName, passWord string, postStore repository.PostStore, c
 }
 
 func RegisterRoutes(mux *http.ServeMux, app *Application) {
+
+	//public endpoints
 	mux.HandleFunc("/", app.Home)
-	mux.HandleFunc("/blogpost", app.GetBlogPostByName)
+	mux.HandleFunc("/post/{name}", app.GetBlogPostByName)
+
 	mux.HandleFunc("/submit", app.basicAuth(app.Submit))
 	mux.HandleFunc("/editpost", app.basicAuth(app.EditPostHandler))
 	mux.HandleFunc("/newpost", app.basicAuth(app.NewPostHandler))
@@ -216,8 +219,12 @@ func (app *Application) GetBlogPostByID(w http.ResponseWriter, r *http.Request) 
 }
 
 func (app *Application) GetBlogPostByName(w http.ResponseWriter, r *http.Request) {
-	queryParams := r.URL.Query()
-	name := queryParams.Get("name")
+	name := r.PathValue("name")
+
+	if name == "" {
+		http.Error(w, "Blog post name is required", http.StatusBadRequest)
+		return
+	}
 
 	app.Cache.Lock()
 	if len(app.Cache.BlogPosts) > 0 {
