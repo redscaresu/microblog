@@ -31,7 +31,7 @@ resource "scaleway_container" "main" {
   http_option    = "redirected"
 
   scaling_option {
-    concurrent_requests_threshold = 10
+    concurrent_requests_threshold = 50
   }
 
   environment_variables = {
