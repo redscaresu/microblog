@@ -150,7 +150,7 @@ func TestSubmitHandler(t *testing.T) {
 	form.Add("title", "Original Title")
 	form.Add("content", "Original Content")
 
-	req, err := http.NewRequest(http.MethodPost, server.URL+"/submit", strings.NewReader(form.Encode()))
+	req, err := http.NewRequest(http.MethodPost, server.URL+"/api/post/new", strings.NewReader(form.Encode()))
 	require.NoError(t, err)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.SetBasicAuth("foo", "foo")
@@ -182,7 +182,7 @@ func TestUpdatePostHandler(t *testing.T) {
 	form.Add("title", "Original Title")
 	form.Add("content", "Original Content")
 
-	req, err := http.NewRequest(http.MethodPost, server.URL+"/submit", strings.NewReader(form.Encode()))
+	req, err := http.NewRequest(http.MethodPost, server.URL+"/api/post/new", strings.NewReader(form.Encode()))
 	require.NoError(t, err)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.SetBasicAuth("foo", "foo")
@@ -202,7 +202,7 @@ func TestUpdatePostHandler(t *testing.T) {
 	editForm.Add("title", "Updated Title")
 	editForm.Add("content", "Updated Content")
 
-	reqEdit, err := http.NewRequest(http.MethodPost, server.URL+"/updatepost", strings.NewReader(editForm.Encode()))
+	reqEdit, err := http.NewRequest(http.MethodPost, server.URL+"/api/post/edit", strings.NewReader(editForm.Encode()))
 	require.NoError(t, err)
 	reqEdit.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	reqEdit.SetBasicAuth("foo", "foo")
@@ -235,7 +235,7 @@ func TestUpdateHandlerBasicAuthError(t *testing.T) {
 	server := newTestServer(t, store, cache)
 	defer server.Close()
 
-	req, err := http.NewRequest("GET", server.URL+"/submit", nil)
+	req, err := http.NewRequest("GET", server.URL+"/api/post/new", nil)
 	require.NoError(t, err)
 
 	resp, err := http.DefaultClient.Do(req)

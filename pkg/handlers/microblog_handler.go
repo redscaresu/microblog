@@ -90,9 +90,9 @@ func RegisterRoutes(mux *http.ServeMux, app *Application) {
 	mux.HandleFunc("/admin/post/edit/{name}", app.basicAuth(app.EditPostHandler))
 
 	// api endpoints
-	mux.HandleFunc("/submit", app.basicAuth(app.Submit))
-	mux.HandleFunc("/updatepost", app.basicAuth(app.UpdatePostHandler))
-	mux.HandleFunc("/deletepost", app.basicAuth(app.DeletePostHandler))
+	mux.HandleFunc("/api/post/new", app.basicAuth(app.Submit))
+	mux.HandleFunc("/api/post/edit", app.basicAuth(app.UpdatePostHandler))
+	mux.HandleFunc("/api/post/delete/{id}", app.basicAuth(app.DeletePostHandler))
 
 	mux.HandleFunc("/rebuildcache", app.basicAuth(app.RebuildCacheHandler))
 }
@@ -365,7 +365,6 @@ func (app *Application) Submit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprint(w, "cache reloaded")
 	fmt.Fprintf(w, "Post submitted successfully!")
 }
 
@@ -420,8 +419,12 @@ func (app *Application) UpdatePostHandler(w http.ResponseWriter, r *http.Request
 
 func (app *Application) DeletePostHandler(w http.ResponseWriter, r *http.Request) {
 
-	queryParams := r.URL.Query()
-	id := queryParams.Get("id")
+	id := r.PathValue("id")
+
+	if id == "" {
+		http.Error(w, "Blog post name is required", http.StatusBadRequest)
+		return
+	}
 
 	idUUID, err := uuid.Parse(id)
 	if err != nil {
@@ -438,7 +441,6 @@ func (app *Application) DeletePostHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	app.Cache.Invalidate()
-	fmt.Fprint(w, "Cache deleted")
 	fmt.Fprintf(w, "Post deleted successfully!")
 }
 
