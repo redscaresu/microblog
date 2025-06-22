@@ -85,11 +85,15 @@ func RegisterRoutes(mux *http.ServeMux, app *Application) {
 	mux.HandleFunc("/", app.Home)
 	mux.HandleFunc("/post/{name}", app.GetBlogPostByName)
 
+	// admin endpoints
+	mux.HandleFunc("/admin/post/new", app.basicAuth(app.NewPostHandler))
+	mux.HandleFunc("/admin/post/edit/{name}", app.basicAuth(app.EditPostHandler))
+
+	// api endpoints
 	mux.HandleFunc("/submit", app.basicAuth(app.Submit))
-	mux.HandleFunc("/editpost", app.basicAuth(app.EditPostHandler))
-	mux.HandleFunc("/newpost", app.basicAuth(app.NewPostHandler))
 	mux.HandleFunc("/updatepost", app.basicAuth(app.UpdatePostHandler))
 	mux.HandleFunc("/deletepost", app.basicAuth(app.DeletePostHandler))
+
 	mux.HandleFunc("/rebuildcache", app.basicAuth(app.RebuildCacheHandler))
 }
 
@@ -133,10 +137,10 @@ func (app *Application) NewPostHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *Application) EditPostHandler(w http.ResponseWriter, r *http.Request) {
-	queryParams := r.URL.Query()
-	name := queryParams.Get("name")
+	name := r.PathValue("name")
+
 	if name == "" {
-		http.Error(w, "name is empty", http.StatusBadRequest)
+		http.Error(w, "Blog post name is required", http.StatusBadRequest)
 		return
 	}
 

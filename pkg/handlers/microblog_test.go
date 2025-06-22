@@ -254,7 +254,7 @@ func TestEditPostHandlerBasicAuthError(t *testing.T) {
 	server := newTestServer(t, store, cache)
 	defer server.Close()
 
-	req, err := http.NewRequest("GET", server.URL+"/editpost?name=doesnotexist", nil)
+	req, err := http.NewRequest("GET", server.URL+"/admin/post/edit/doesnotexist", nil)
 	require.NoError(t, err)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -273,7 +273,7 @@ func TestSubmitHandlerBasicAuthError(t *testing.T) {
 	server := newTestServer(t, store, cache)
 	defer server.Close()
 
-	req, err := http.NewRequest("GET", server.URL+"/newpost", nil)
+	req, err := http.NewRequest("GET", server.URL+"/admin/post/new", nil)
 	require.NoError(t, err)
 
 	resp, err := http.DefaultClient.Do(req)
