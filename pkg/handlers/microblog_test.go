@@ -48,7 +48,12 @@ func TestListenAndServe_NoCache(t *testing.T) {
 	t.Parallel()
 
 	id := uuid.New()
-	blogPost := &models.BlogPost{ID: id, Title: "foo", Content: "boo", FormattedDate: "1 June, 2025"}
+	blogPost := &models.BlogPost{
+		ID:            id,
+		Name:          "foo",
+		Title:         "foo",
+		Content:       "boo",
+		FormattedDate: "1 June, 2025"}
 	store := &repository.MemoryPostStore{BlogPosts: []*models.BlogPost{blogPost}}
 	cache := cache.New([]*models.BlogPost{}, &sync.Mutex{})
 
@@ -62,7 +67,7 @@ func TestListenAndServe_NoCache(t *testing.T) {
 	require.NoError(t, err)
 
 	got := string(read)
-	assert.Contains(t, got, "<h2><a href=\"/blogpost?name=")
+	assert.Contains(t, got, "<h2><a href=\"/post/foo")
 	assert.Contains(t, got, "<p>foo</p>")
 	assert.Contains(t, got, "<p>boo</p>")
 	assert.Contains(t, got, "<h3 style=\"color: grey; font-size: 0.9em;\">1 June, 2025</h3>")
@@ -72,7 +77,12 @@ func TestListenAndServe_CacheHit(t *testing.T) {
 	t.Parallel()
 
 	id := uuid.New()
-	blogPost := &models.BlogPost{ID: id, Title: "foo", Content: "boo", FormattedDate: "1 June, 2025"}
+	blogPost := &models.BlogPost{
+		ID:            id,
+		Name:          "foo",
+		Title:         "foo",
+		Content:       "boo",
+		FormattedDate: "1 June, 2025"}
 	store := &repository.MemoryPostStore{BlogPosts: []*models.BlogPost{blogPost}}
 	cache := cache.New([]*models.BlogPost{}, &sync.Mutex{})
 
@@ -93,6 +103,7 @@ func TestListenAndServe_CacheHit(t *testing.T) {
 	require.Equal(t, []*models.BlogPost{
 		{
 			Title:         "<p>foo</p>\n",
+			Name:          "foo",
 			Content:       "<p>boo</p>\n",
 			ID:            id,
 			FormattedDate: blogPost.FormattedDate,
@@ -104,7 +115,7 @@ func TestListenAndServe_CacheHit(t *testing.T) {
 	require.NoError(t, err)
 
 	got := string(read)
-	assert.Contains(t, got, "<h2><a href=\"/blogpost?name=")
+	assert.Contains(t, got, "<h2><a href=\"/post/foo")
 	assert.Contains(t, got, "<p>foo</p>")
 	assert.Contains(t, got, "<p>boo</p>")
 	assert.Contains(t, got, "<h3 style=\"color: grey; font-size: 0.9em;\">1 June, 2025</h3>")
@@ -120,7 +131,7 @@ func TestListenAndServe_CacheHit(t *testing.T) {
 	require.NoError(t, err)
 
 	got = string(read)
-	assert.Contains(t, got, "<h2><a href=\"/blogpost?name=")
+	assert.Contains(t, got, "<h2><a href=\"/post/foo")
 	assert.Contains(t, got, "<p>foo</p>")
 	assert.Contains(t, got, "<p>boo</p>")
 	assert.Contains(t, got, "<h3 style=\"color: grey; font-size: 0.9em;\">1 June, 2025</h3>")
@@ -139,7 +150,7 @@ func TestSubmitHandler(t *testing.T) {
 	form.Add("title", "Original Title")
 	form.Add("content", "Original Content")
 
-	req, err := http.NewRequest(http.MethodPost, server.URL+"/submit", strings.NewReader(form.Encode()))
+	req, err := http.NewRequest(http.MethodPost, server.URL+"/api/post/new", strings.NewReader(form.Encode()))
 	require.NoError(t, err)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.SetBasicAuth("foo", "foo")
@@ -171,7 +182,7 @@ func TestUpdatePostHandler(t *testing.T) {
 	form.Add("title", "Original Title")
 	form.Add("content", "Original Content")
 
-	req, err := http.NewRequest(http.MethodPost, server.URL+"/submit", strings.NewReader(form.Encode()))
+	req, err := http.NewRequest(http.MethodPost, server.URL+"/api/post/new", strings.NewReader(form.Encode()))
 	require.NoError(t, err)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.SetBasicAuth("foo", "foo")
@@ -191,7 +202,7 @@ func TestUpdatePostHandler(t *testing.T) {
 	editForm.Add("title", "Updated Title")
 	editForm.Add("content", "Updated Content")
 
-	reqEdit, err := http.NewRequest(http.MethodPost, server.URL+"/updatepost", strings.NewReader(editForm.Encode()))
+	reqEdit, err := http.NewRequest(http.MethodPost, server.URL+"/api/post/edit", strings.NewReader(editForm.Encode()))
 	require.NoError(t, err)
 	reqEdit.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	reqEdit.SetBasicAuth("foo", "foo")
@@ -224,7 +235,7 @@ func TestUpdateHandlerBasicAuthError(t *testing.T) {
 	server := newTestServer(t, store, cache)
 	defer server.Close()
 
-	req, err := http.NewRequest("GET", server.URL+"/submit", nil)
+	req, err := http.NewRequest("GET", server.URL+"/api/post/new", nil)
 	require.NoError(t, err)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -243,7 +254,7 @@ func TestEditPostHandlerBasicAuthError(t *testing.T) {
 	server := newTestServer(t, store, cache)
 	defer server.Close()
 
-	req, err := http.NewRequest("GET", server.URL+"/editpost?name=doesnotexist", nil)
+	req, err := http.NewRequest("GET", server.URL+"/admin/post/edit/doesnotexist", nil)
 	require.NoError(t, err)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -262,7 +273,7 @@ func TestSubmitHandlerBasicAuthError(t *testing.T) {
 	server := newTestServer(t, store, cache)
 	defer server.Close()
 
-	req, err := http.NewRequest("GET", server.URL+"/newpost", nil)
+	req, err := http.NewRequest("GET", server.URL+"/admin/post/new", nil)
 	require.NoError(t, err)
 
 	resp, err := http.DefaultClient.Do(req)

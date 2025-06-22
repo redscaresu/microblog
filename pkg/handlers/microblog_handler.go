@@ -80,13 +80,20 @@ func NewApplication(userName, passWord string, postStore repository.PostStore, c
 }
 
 func RegisterRoutes(mux *http.ServeMux, app *Application) {
+
+	//public endpoints
 	mux.HandleFunc("/", app.Home)
-	mux.HandleFunc("/blogpost", app.GetBlogPostByName)
-	mux.HandleFunc("/submit", app.basicAuth(app.Submit))
-	mux.HandleFunc("/editpost", app.basicAuth(app.EditPostHandler))
-	mux.HandleFunc("/newpost", app.basicAuth(app.NewPostHandler))
-	mux.HandleFunc("/updatepost", app.basicAuth(app.UpdatePostHandler))
-	mux.HandleFunc("/deletepost", app.basicAuth(app.DeletePostHandler))
+	mux.HandleFunc("/post/{name}", app.GetBlogPostByName)
+
+	// admin endpoints
+	mux.HandleFunc("/admin/post/new", app.basicAuth(app.NewPostHandler))
+	mux.HandleFunc("/admin/post/edit/{name}", app.basicAuth(app.EditPostHandler))
+
+	// api endpoints
+	mux.HandleFunc("/api/post/new", app.basicAuth(app.Submit))
+	mux.HandleFunc("/api/post/edit", app.basicAuth(app.UpdatePostHandler))
+	mux.HandleFunc("/api/post/delete/{id}", app.basicAuth(app.DeletePostHandler))
+
 	mux.HandleFunc("/rebuildcache", app.basicAuth(app.RebuildCacheHandler))
 }
 
@@ -130,10 +137,10 @@ func (app *Application) NewPostHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *Application) EditPostHandler(w http.ResponseWriter, r *http.Request) {
-	queryParams := r.URL.Query()
-	name := queryParams.Get("name")
+	name := r.PathValue("name")
+
 	if name == "" {
-		http.Error(w, "name is empty", http.StatusBadRequest)
+		http.Error(w, "Blog post name is required", http.StatusBadRequest)
 		return
 	}
 
@@ -216,8 +223,12 @@ func (app *Application) GetBlogPostByID(w http.ResponseWriter, r *http.Request) 
 }
 
 func (app *Application) GetBlogPostByName(w http.ResponseWriter, r *http.Request) {
-	queryParams := r.URL.Query()
-	name := queryParams.Get("name")
+	name := r.PathValue("name")
+
+	if name == "" {
+		http.Error(w, "Blog post name is required", http.StatusBadRequest)
+		return
+	}
 
 	app.Cache.Lock()
 	if len(app.Cache.BlogPosts) > 0 {
@@ -354,7 +365,6 @@ func (app *Application) Submit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprint(w, "cache reloaded")
 	fmt.Fprintf(w, "Post submitted successfully!")
 }
 
@@ -409,8 +419,12 @@ func (app *Application) UpdatePostHandler(w http.ResponseWriter, r *http.Request
 
 func (app *Application) DeletePostHandler(w http.ResponseWriter, r *http.Request) {
 
-	queryParams := r.URL.Query()
-	id := queryParams.Get("id")
+	id := r.PathValue("id")
+
+	if id == "" {
+		http.Error(w, "Blog post name is required", http.StatusBadRequest)
+		return
+	}
 
 	idUUID, err := uuid.Parse(id)
 	if err != nil {
@@ -427,7 +441,6 @@ func (app *Application) DeletePostHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	app.Cache.Invalidate()
-	fmt.Fprint(w, "Cache deleted")
 	fmt.Fprintf(w, "Post deleted successfully!")
 }
 
