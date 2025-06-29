@@ -103,6 +103,7 @@ func TestListenAndServe_CacheHit(t *testing.T) {
 	require.Equal(t, []*models.BlogPost{
 		{
 			Title:         "<p>foo</p>\n",
+			TitleNonHTML:  "foo",
 			Name:          "foo",
 			Content:       "<p>boo</p>\n",
 			ID:            id,

@@ -9,6 +9,7 @@ import (
 type BlogPost struct {
 	ID            uuid.UUID
 	Title         string
+	TitleNonHTML  string
 	Content       string
 	Name          string
 	CreatedAt     time.Time

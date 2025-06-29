@@ -90,8 +90,8 @@ func RegisterRoutes(mux *http.ServeMux, app *Application) {
 	mux.HandleFunc("/admin/post/edit/{name}", app.basicAuth(app.EditPostHandler))
 
 	// api endpoints
-	mux.HandleFunc("/api/post/new", app.basicAuth(app.Submit))
-	mux.HandleFunc("/api/post/edit", app.basicAuth(app.UpdatePostHandler))
+	mux.HandleFunc("/api/post/new", app.basicAuth(app.SubmitNewPost))
+	mux.HandleFunc("/api/post/edit", app.basicAuth(app.SubmitUpdatePostHandler))
 	mux.HandleFunc("/api/post/delete/{id}", app.basicAuth(app.DeletePostHandler))
 
 	mux.HandleFunc("/rebuildcache", app.basicAuth(app.RebuildCacheHandler))
@@ -236,21 +236,19 @@ func (app *Application) GetBlogPostByName(w http.ResponseWriter, r *http.Request
 			//blog exists in cache
 			if cachedPost.Name == name {
 				log.Printf("GetBlogPostByName cache hit")
-				blog := cachedPost
-				blog.Content = RenderMarkdown(blog.Content)
-				blog.Title = RenderMarkdown(blog.Title)
-				log.Printf("Processed Content for %s: %s", name, blog.Content)
 
 				tpl, err := texttemplate.New("blogpost.gohtml").Funcs(funcMap).ParseFS(templates, "templates/blogpost.gohtml")
 				if err != nil {
 					log.Printf("Error parsing blogpost.gohtml template: %v", err)
+					app.Cache.Unlock()
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
 				}
 
-				err = tpl.Execute(w, blog)
+				err = tpl.Execute(w, cachedPost) // Use cached post directly
 				if err != nil {
 					log.Printf("Error executing blogpost.gohtml template: %v", err)
+					app.Cache.Unlock()
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
 				}
@@ -281,10 +279,6 @@ func (app *Application) GetBlogPostByName(w http.ResponseWriter, r *http.Request
 		}
 	}
 
-	log.Printf("Original Content for %s: %s", name, blog.Content)
-	blog.Content = RenderMarkdown(blog.Content)
-	blog.Title = RenderMarkdown(blog.Title)
-
 	log.Printf("Processed Content for %s: %s", name, blog.Content)
 
 	tpl, err := texttemplate.New("blogpost.gohtml").Funcs(funcMap).ParseFS(templates, "templates/blogpost.gohtml")
@@ -302,7 +296,7 @@ func (app *Application) GetBlogPostByName(w http.ResponseWriter, r *http.Request
 	}
 }
 
-func (app *Application) Submit(w http.ResponseWriter, r *http.Request) {
+func (app *Application) SubmitNewPost(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		http.Error(w, "Failed to parse form data", http.StatusBadRequest)
@@ -347,7 +341,6 @@ func (app *Application) Submit(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
 	unNormalizedblogPosts, err := app.PostStore.FetchLast10BlogPosts()
 	if err != nil {
 		http.Error(w, "unable to fetch last 10 blog posts", http.StatusInternalServerError)
@@ -368,7 +361,7 @@ func (app *Application) Submit(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Post submitted successfully!")
 }
 
-func (app *Application) UpdatePostHandler(w http.ResponseWriter, r *http.Request) {
+func (app *Application) SubmitUpdatePostHandler(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		log.Printf("Unable to parse form: %v", err)
@@ -483,6 +476,7 @@ func normalizeBlogPost(unNormalizedBlogPosts []*models.BlogPost) []*models.BlogP
 		normalizedBlogPosts[i] = &models.BlogPost{
 			ID:            unNormalizedBlogPosts[i].ID,
 			Title:         unNormalizedBlogPosts[i].Title,
+			TitleNonHTML:  unNormalizedBlogPosts[i].Title,
 			Content:       unNormalizedBlogPosts[i].Content,
 			Name:          unNormalizedBlogPosts[i].Name,
 			CreatedAt:     unNormalizedBlogPosts[i].CreatedAt,
