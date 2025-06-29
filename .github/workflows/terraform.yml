@@ -51,7 +51,13 @@ jobs:
         run: terraform init -backend-config="bucket=${{ secrets.BUCKET_TF_STATE }}"
 
       - name: Plan Terraform Changes
-        run: terraform plan
+        shell: bash
+        run: |
+          set -o pipefail
+          terraform plan | grep -v "Refreshing state\|Reading\|Read complete"
 
       - name: Apply Terraform Changes
-        run: terraform apply -auto-approve
+        shell: bash
+        run: |
+          set -o pipefail
+          terraform apply -auto-approve | grep -v "Refreshing state\|Reading\|Read complete"
