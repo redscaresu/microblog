@@ -18,7 +18,6 @@ env:
  SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
  BUCKET_TF_STATE: ${{ secrets.BUCKET_TF_STATE }}
  TF_VAR_project_id: ${{ secrets.TF_VAR_PROJECT_ID }}
- TF_LOG: WARN
  
 jobs:
   deploy:
