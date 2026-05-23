@@ -130,11 +130,8 @@ jobs:
             echo '```'
           } > ../tfplan-comment.md
           existing_comment_id=$(
-            gh pr view ${{ github.event.pull_request.number }} \
-              --repo ${{ github.repository }} \
-              --json comments \
-              --jq '.comments
-                | map(select(.author.login == "github-actions" and (.body | startswith("## Terraform Plan"))))
+            gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments \
+              --jq 'map(select(.user.login == "github-actions[bot]" and (.body | startswith("## Terraform Plan"))))
                 | last
                 | .id // empty'
           )
