@@ -1,18 +1,18 @@
 data "scaleway_account_project" "default" {
-  name     = "default"
+  name            = "default"
   organization_id = var.organization_id
 }
 
 resource "scaleway_iam_application" "blog" {
-  name     = "blog"
+  name            = "blog"
   organization_id = var.organization_id
 }
 
 resource "scaleway_iam_policy" "db_access" {
   organization_id = var.organization_id
-  name           = "my policy"
-  description    = "gives app access to serverless database in project"
-  application_id = scaleway_iam_application.blog.id
+  name            = "my policy"
+  description     = "gives app access to serverless database in project"
+  application_id  = scaleway_iam_application.blog.id
   rule {
     project_ids          = [data.scaleway_account_project.default.id]
     permission_set_names = ["ServerlessSQLDatabaseReadWrite"]
@@ -24,10 +24,10 @@ resource "scaleway_iam_api_key" "api_key" {
 }
 
 resource "scaleway_sdb_sql_database" "blog" {
-  name     = "blog"
-  min_cpu  = 0
-  max_cpu  = 1
-  project_id  = var.project_id
+  name       = "blog"
+  min_cpu    = 0
+  max_cpu    = 1
+  project_id = var.project_id
 }
 
 output "database_connection_string" {
