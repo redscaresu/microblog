@@ -129,7 +129,24 @@ jobs:
             sed -n '1,600p' ../tfplan-sanitized.txt
             echo '```'
           } > ../tfplan-comment.md
-          gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body-file ../tfplan-comment.md
+          existing_comment_id=$(
+            gh pr view ${{ github.event.pull_request.number }} \
+              --repo ${{ github.repository }} \
+              --json comments \
+              --jq '.comments
+                | map(select(.author.login == "github-actions" and (.body | startswith("## Terraform Plan"))))
+                | last
+                | .id // empty'
+          )
+
+          if [ -n "${existing_comment_id}" ]; then
+            gh api \
+              --method PATCH \
+              repos/${{ github.repository }}/issues/comments/${existing_comment_id} \
+              --field body@"../tfplan-comment.md"
+          else
+            gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body-file ../tfplan-comment.md
+          fi
 
   deploy:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
