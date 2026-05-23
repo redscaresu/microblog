@@ -48,7 +48,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          image_tag=$(terraform state show scaleway_container.main | awk -F' = ' '/registry_image/ {gsub(/"/,"",$2); print $2}')
+          image_tag=$(
+            terraform state pull \
+              | jq -r '.resources[]
+                | select(.type == "scaleway_container" and .name == "main")
+                | .instances[0].attributes.registry_image'
+          )
           echo "TF_VAR_container_image_tag=${image_tag}" >> "$GITHUB_ENV"
 
       - name: Plan Terraform Changes
