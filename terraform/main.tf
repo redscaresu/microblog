@@ -55,6 +55,11 @@ resource "scaleway_container_domain" "main" {
   hostname     = "ashouri.xyz"
 }
 
+resource "scaleway_container_domain" "blog" {
+  container_id = scaleway_container.main.id
+  hostname     = "blog.ashouri.xyz"
+}
+
 output "auth_password" {
   value       = random_password.auth_password.result
   sensitive   = true
