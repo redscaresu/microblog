@@ -7,6 +7,10 @@ on:
     paths:
       - "terraform/**"
       - ".github/workflows/terraform.yml"
+  pull_request:
+    paths:
+      - "terraform/**"
+      - ".github/workflows/terraform.yml"
   workflow_run:
     workflows:
       - ci
@@ -15,6 +19,9 @@ on:
     branches:
       - main
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   validate:
@@ -31,6 +38,7 @@ jobs:
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.11.3
+          terraform_wrapper: false
 
       - name: Initialize Terraform Without Backend
         run: terraform init -backend=false
@@ -41,17 +49,80 @@ jobs:
       - name: Validate Terraform
         run: terraform validate
 
+  pr-plan:
+    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    defaults:
+      run:
+        working-directory: ./terraform
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.11.3
+          terraform_wrapper: false
+
+      - name: Initialize Terraform
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+        run: terraform init -backend-config="bucket=${{ secrets.BUCKET_TF_STATE }}"
+
+      - name: Read current image tag from state
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          image_tag=$(
+            terraform state pull \
+              | jq -r '.resources[]
+                | select(.type == "scaleway_container" and .name == "main")
+                | .instances[0].attributes.registry_image'
+          )
+          echo "TF_VAR_container_image_tag=${image_tag}" >> "$GITHUB_ENV"
+
+      - name: Run Terraform Plan
+        env:
+          TF_VAR_organization_id: ${{ secrets.TF_VAR_organization_id }}
+          TF_VAR_project_id: ${{ secrets.TF_VAR_PROJECT_ID }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          terraform plan -no-color > ../tfplan.txt
+
+      - name: Comment Terraform Plan on PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          {
+            echo "## Terraform Plan"
+            echo
+            echo '```'
+            sed -n '1,600p' ../tfplan.txt
+            echo '```'
+          } > ../tfplan-comment.md
+          gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body-file ../tfplan-comment.md
+
   deploy:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
-    env:
-      TF_VAR_organization_id: ${{ secrets.TF_VAR_organization_id }}
-      AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
-      SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
-      SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
-      BUCKET_TF_STATE: ${{ secrets.BUCKET_TF_STATE }}
-      TF_VAR_project_id: ${{ secrets.TF_VAR_PROJECT_ID }}
     defaults:
         run:
           working-directory: ./terraform
@@ -75,17 +146,37 @@ jobs:
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.11.3
+          terraform_wrapper: false
 
       - name: Initialize Terraform
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
         run: terraform init -backend-config="bucket=${{ secrets.BUCKET_TF_STATE }}"
 
       - name: Plan Terraform Changes
+        env:
+          TF_VAR_organization_id: ${{ secrets.TF_VAR_organization_id }}
+          TF_VAR_project_id: ${{ secrets.TF_VAR_PROJECT_ID }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
         shell: bash
         run: |
           set -o pipefail
           terraform plan | grep -v "Refreshing state\|Reading\|Read complete"
 
       - name: Apply Terraform Changes
+        env:
+          TF_VAR_organization_id: ${{ secrets.TF_VAR_organization_id }}
+          TF_VAR_project_id: ${{ secrets.TF_VAR_PROJECT_ID }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
         shell: bash
         run: |
           set -o pipefail
