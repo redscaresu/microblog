@@ -15,18 +15,9 @@ on:
     branches:
       - main
   workflow_dispatch:
- 
-env:
- TF_VAR_organization_id: ${{ secrets.TF_VAR_organization_id }}
- AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
- AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
- SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
- SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
- BUCKET_TF_STATE: ${{ secrets.BUCKET_TF_STATE }}
- TF_VAR_project_id: ${{ secrets.TF_VAR_PROJECT_ID }}
- 
+
 jobs:
-  plan:
+  validate:
     if: ${{ github.event_name != 'workflow_run' }}
     runs-on: ubuntu-latest
     defaults:
@@ -41,30 +32,26 @@ jobs:
         with:
           terraform_version: 1.11.3
 
-      - name: Initialize Terraform
-        run: terraform init -backend-config="bucket=${{ secrets.BUCKET_TF_STATE }}"
+      - name: Initialize Terraform Without Backend
+        run: terraform init -backend=false
 
-      - name: Read current image tag from state
-        shell: bash
-        run: |
-          set -euo pipefail
-          image_tag=$(
-            terraform state pull \
-              | jq -r '.resources[]
-                | select(.type == "scaleway_container" and .name == "main")
-                | .instances[0].attributes.registry_image'
-          )
-          echo "TF_VAR_container_image_tag=${image_tag}" >> "$GITHUB_ENV"
+      - name: Check Terraform Formatting
+        run: terraform fmt -check
 
-      - name: Plan Terraform Changes
-        shell: bash
-        run: |
-          set -o pipefail
-          terraform plan | grep -v "Refreshing state\|Reading\|Read complete"
+      - name: Validate Terraform
+        run: terraform validate
 
   deploy:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
+    env:
+      TF_VAR_organization_id: ${{ secrets.TF_VAR_organization_id }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+      SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+      SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+      BUCKET_TF_STATE: ${{ secrets.BUCKET_TF_STATE }}
+      TF_VAR_project_id: ${{ secrets.TF_VAR_PROJECT_ID }}
     defaults:
         run:
           working-directory: ./terraform
