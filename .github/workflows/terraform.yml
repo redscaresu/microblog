@@ -1,6 +1,12 @@
 name: terraform
 
 on:
+  push:
+    branches-ignore:
+      - main
+    paths:
+      - "terraform/**"
+      - ".github/workflows/terraform.yml"
   workflow_run:
     workflows:
       - ci
@@ -20,6 +26,37 @@ env:
  TF_VAR_project_id: ${{ secrets.TF_VAR_PROJECT_ID }}
  
 jobs:
+  plan:
+    if: ${{ github.event_name != 'workflow_run' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./terraform
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.11.3
+
+      - name: Initialize Terraform
+        run: terraform init -backend-config="bucket=${{ secrets.BUCKET_TF_STATE }}"
+
+      - name: Read current image tag from state
+        shell: bash
+        run: |
+          set -euo pipefail
+          image_tag=$(terraform state show scaleway_container.main | awk -F' = ' '/registry_image/ {gsub(/"/,"",$2); print $2}')
+          echo "TF_VAR_container_image_tag=${image_tag}" >> "$GITHUB_ENV"
+
+      - name: Plan Terraform Changes
+        shell: bash
+        run: |
+          set -o pipefail
+          terraform plan | grep -v "Refreshing state\|Reading\|Read complete"
+
   deploy:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest

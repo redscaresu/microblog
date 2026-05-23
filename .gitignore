@@ -13,3 +13,7 @@ terraform.tfstate.backup
 
 # Ignore Terraform directories
 .terraform/
+
+# Ignore local Terraform variable files
+terraform/terraform.auto.tfvars
+terraform/*.auto.tfvars
