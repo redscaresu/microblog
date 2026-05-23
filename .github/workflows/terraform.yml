@@ -106,6 +106,17 @@ jobs:
           set -euo pipefail
           terraform plan -no-color > ../tfplan.txt
 
+      - name: Sanitize Terraform Plan Output
+        shell: bash
+        run: |
+          set -euo pipefail
+          sed \
+            -e '/Refreshing state\.\.\./d' \
+            -e '/Reading\.\.\./d' \
+            -e '/Read complete/d' \
+            -e '/^$/N;/^\n$/D' \
+            ../tfplan.txt > ../tfplan-sanitized.txt
+
       - name: Comment Terraform Plan on PR
         env:
           GH_TOKEN: ${{ github.token }}
@@ -115,7 +126,7 @@ jobs:
             echo "## Terraform Plan"
             echo
             echo '```'
-            sed -n '1,600p' ../tfplan.txt
+            sed -n '1,600p' ../tfplan-sanitized.txt
             echo '```'
           } > ../tfplan-comment.md
           gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body-file ../tfplan-comment.md
