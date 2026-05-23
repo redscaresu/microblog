@@ -140,10 +140,11 @@ jobs:
           )
 
           if [ -n "${existing_comment_id}" ]; then
+            comment_body="$(cat ../tfplan-comment.md)"
             gh api \
               --method PATCH \
               repos/${{ github.repository }}/issues/comments/${existing_comment_id} \
-              --field body@"../tfplan-comment.md"
+              --raw-field body="${comment_body}"
           else
             gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body-file ../tfplan-comment.md
           fi
