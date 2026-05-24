@@ -5,40 +5,49 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{.TitleNonHTML}}</title>
     <style>
+        :root {
+            --paper: #f5f0e6;
+            --ink: #202829;
+            --muted: #626a68;
+            --line: #cfc5b6;
+            --accent: #9a3f2b;
+            --quote: #ebe2d5;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            background-color: #0d1b2a; /* Darker blue background */
-            color: #ffffff; /* White text color */
+            font-family: Georgia, "Times New Roman", serif;
+            background-color: var(--paper);
+            color: var(--ink);
             margin: 0;
-            padding: 0;
+            padding: 0 1rem 4rem;
         }
 
         .container {
-            max-width: 800px; /* Limit the width of the content */
-            margin: 40px auto; /* Center the content and add vertical spacing */
-            padding: 20px; /* Add padding inside the container */
-            background-color: #1b263b; /* Slightly lighter background for contrast */
-            border-radius: 8px; /* Rounded corners for a modern look */
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow for depth */
+            max-width: 760px;
+            margin: 2.5rem auto;
+            padding-top: 1.75rem;
+            border-top: 1px solid var(--line);
         }
 
         h1 {
-            text-align: center;
-            margin-top: 20px;
-            color: #e94560; /* Accent color for the title */
+            margin: 0 0 1.5rem;
+            color: var(--ink);
+            font-size: clamp(2.1rem, 6vw, 3.5rem);
+            font-weight: 400;
+            line-height: 1.08;
+            letter-spacing: 0;
         }
 
         blockquote {
-            margin: 20px 0; /* Add vertical spacing */
-            padding: 10px 20px; /* Add padding inside the blockquote */
-            border-left: 4px solid #e94560; /* Add a colored border to the left */
-            background-color: #2e3b4e; /* Slightly darker background for contrast */
-            color: #ffffff; /* White text color */
-            font-style: italic; /* Italicize the text */
+            margin: 1.5rem 0;
+            padding: 1rem 1.25rem;
+            border-left: 4px solid var(--accent);
+            background-color: var(--quote);
+            font-style: italic;
         }
 
         a {
-            color: #0fbcf9; /* Light blue color for links */
+            color: var(--accent);
             text-decoration: none;
         }
 
@@ -47,13 +56,15 @@
         }
 
         p {
-            color: #ffffff; /* White text color for paragraphs */
-            line-height: 1.8; /* Improve readability with increased line height */
+            color: var(--ink);
+            line-height: 1.8;
         }
 
         .back-link {
-            text-align: center;
-            margin: 20px 0;
+            max-width: 760px;
+            margin: 1.5rem auto 0;
+            font-family: Arial, sans-serif;
+            font-size: 0.95rem;
         }
     </style>
 </head>

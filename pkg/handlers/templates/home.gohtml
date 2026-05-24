@@ -5,27 +5,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ashouri</title>
     <style>
+        :root {
+            --paper: #f5f0e6;
+            --ink: #202829;
+            --muted: #626a68;
+            --line: #cfc5b6;
+            --accent: #9a3f2b;
+            --accent-dark: #6f2d1f;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            background-color: #0d1b2a; /* Dark blue background */
-            color: #ffffff; /* White text color */
+            font-family: Georgia, "Times New Roman", serif;
+            background-color: var(--paper);
+            color: var(--ink);
             margin: 0;
-            padding: 0;
+            padding: 0 1rem 4rem;
         }
 
         .container {
-            width: 80%;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #0d1b2a; /* Slightly lighter dark blue */
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            border-radius: 8px; /* Rounded corners */
+            width: min(660px, 100%);
+            margin: 2.75rem auto 0;
+            border-top: 1px solid var(--line);
+            border-bottom: 1px solid var(--line);
         }
 
         .blog-post {
-            border-bottom: 1px solid #ddd;
-            padding: 10px 0;
-            text-align: center;
+            border-bottom: 1px solid var(--line);
+            padding: 1.5rem 0;
         }
 
         .blog-post:last-child {
@@ -34,12 +40,32 @@
 
         h1 {
             text-align: center;
-            margin-top: 20px;
-            color: #e94560; /* Accent color for the title */
+            margin: 2rem 0 0.75rem;
+            color: var(--ink);
+            font-size: clamp(2.4rem, 8vw, 4.5rem);
+            font-weight: 400;
+            letter-spacing: 0;
+        }
+
+        h2 {
+            margin: 0.35rem 0 0.75rem;
+            font-size: clamp(1.45rem, 4vw, 2.25rem);
+            font-weight: 400;
+            line-height: 1.1;
+        }
+
+        h3 {
+            margin: 0;
+            color: var(--muted);
+            font-family: Arial, sans-serif;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
         }
 
         a {
-            color: #0fbcf9; /* Light blue color for links */
+            color: var(--accent);
             text-decoration: none;
         }
 
@@ -48,22 +74,32 @@
         }
 
         p {
-            color: #ffffff; /* White text color for paragraphs */
+            color: var(--ink);
+            line-height: 1.7;
+            margin: 0;
+        }
+
+        .post-preview {
+            font-size: 1.05rem;
         }
 
         .about-me {
             text-align: center;
-            margin: 20px 0;
+            margin: 1.5rem 0 0;
+            color: var(--muted);
+            font-family: Arial, sans-serif;
+            font-size: 0.95rem;
         }
 
         .links {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 1.5rem;
+            font-family: Arial, sans-serif;
         }
 
         .links a {
-            margin: 0 10px;
-            color: #0fbcf9;
+            margin: 0 0.5rem;
+            color: var(--accent-dark);
             text-decoration: none;
         }
 
@@ -87,9 +123,9 @@
         <!-- Blog posts will be displayed here -->
         {{ range .}}
             <div class="blog-post">
-                <h3 style="color: grey; font-size: 0.9em;">{{.FormattedDate}}</h3> <!-- Smaller and grey -->
+                <h3>{{.FormattedDate}}</h3>
                 <h2><a href="/post/{{urlquery .Name}}">{{.Title}}</a></h2>
-                <div>{{.Content | truncateChars 300}}</div>
+                <div class="post-preview">{{.Content | truncateChars 420}}</div>
             </div>
         {{ end }}
     </div>
