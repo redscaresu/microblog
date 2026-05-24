@@ -4,7 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ashouri</title>
+    <link rel="icon" href="/assets/ashouri-favicon.svg" type="image/svg+xml">
     <style>
+        @font-face {
+            font-family: "Simplifica";
+            src: url("/assets/simplifica-sans.ttf") format("truetype");
+            font-display: swap;
+        }
+
         :root {
             --paper: #f5f0e6;
             --ink: #202829;
@@ -42,9 +49,26 @@
             text-align: center;
             margin: 2rem 0 0.75rem;
             color: var(--ink);
-            font-size: clamp(2.4rem, 8vw, 4.5rem);
+            font-family: "Simplifica", "Avenir Next Condensed", "Arial Narrow", sans-serif;
+            font-size: clamp(4rem, 16vw, 7.5rem);
             font-weight: 400;
+            line-height: 0.78;
             letter-spacing: 0;
+        }
+
+        h1 a {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        h1 a::after {
+            content: "";
+            display: block;
+            width: 2.8em;
+            height: 0.08em;
+            margin-top: 0.16em;
+            background: var(--accent);
         }
 
         h2 {
@@ -109,7 +133,7 @@
     </style>
 </head>
 <body>
-    <h1><a href="https://ashouri.xyz/" style="text-decoration: none; color: inherit;">Ashouri</a></h1>
+    <h1><a href="https://ashouri.xyz/">Ashouri</a></h1>
 
     <div class="links">
         <a href="https://github.com/redscaresu" target="_blank">GitHub</a>
