@@ -7,6 +7,7 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"log"
 	"microblog/pkg/cache"
 	"microblog/pkg/models"
@@ -28,7 +29,9 @@ import (
 var (
 	//go:embed templates/*
 	templates embed.FS
-	md        goldmark.Markdown
+	//go:embed assets/*
+	assets embed.FS
+	md     goldmark.Markdown
 )
 
 func init() {
@@ -82,6 +85,11 @@ func NewApplication(userName, passWord string, postStore repository.PostStore, c
 func RegisterRoutes(mux *http.ServeMux, app *Application) {
 
 	//public endpoints
+	assetFS, err := fs.Sub(assets, "assets")
+	if err != nil {
+		panic(err)
+	}
+	mux.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.FS(assetFS))))
 	mux.HandleFunc("/", app.Home)
 	mux.HandleFunc("/post/{name}", app.GetBlogPostByName)
 	mux.HandleFunc("/healthz", app.Healthz)
