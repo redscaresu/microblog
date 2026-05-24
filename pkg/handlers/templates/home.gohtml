@@ -23,7 +23,7 @@
         }
 
         .container {
-            width: min(760px, 100%);
+            width: min(660px, 100%);
             margin: 2.75rem auto 0;
             border-top: 1px solid var(--line);
             border-bottom: 1px solid var(--line);
@@ -79,6 +79,10 @@
             margin: 0;
         }
 
+        .post-preview {
+            font-size: 1.05rem;
+        }
+
         .about-me {
             text-align: center;
             margin: 1.5rem 0 0;
@@ -121,7 +125,7 @@
             <div class="blog-post">
                 <h3>{{.FormattedDate}}</h3>
                 <h2><a href="/post/{{urlquery .Name}}">{{.Title}}</a></h2>
-                <div>{{.Content | truncateChars 300}}</div>
+                <div class="post-preview">{{.Content | truncateChars 420}}</div>
             </div>
         {{ end }}
     </div>
