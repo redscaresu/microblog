@@ -67,7 +67,7 @@ func TestListenAndServe_NoCache(t *testing.T) {
 	assert.Contains(t, got, "<h2><a href=\"/post/foo")
 	assert.Contains(t, got, "<p>foo</p>")
 	assert.Contains(t, got, "<p>boo</p>")
-	assert.Contains(t, got, "<h3 style=\"color: grey; font-size: 0.9em;\">1 June, 2025</h3>")
+	assert.Contains(t, got, "<h3>1 June, 2025</h3>")
 	assert.Contains(t, got, "<title>Ashouri</title>")
 	assert.Contains(t, got, ">GitHub</a>")
 	assert.Contains(t, got, ">LinkedIn</a>")
@@ -121,7 +121,7 @@ func TestListenAndServe_CacheHit(t *testing.T) {
 	assert.Contains(t, got, "<h2><a href=\"/post/foo")
 	assert.Contains(t, got, "<p>foo</p>")
 	assert.Contains(t, got, "<p>boo</p>")
-	assert.Contains(t, got, "<h3 style=\"color: grey; font-size: 0.9em;\">1 June, 2025</h3>")
+	assert.Contains(t, got, "<h3>1 June, 2025</h3>")
 
 	// test cache hit
 	resp, err = http.Get(server.URL)
@@ -137,7 +137,7 @@ func TestListenAndServe_CacheHit(t *testing.T) {
 	assert.Contains(t, got, "<h2><a href=\"/post/foo")
 	assert.Contains(t, got, "<p>foo</p>")
 	assert.Contains(t, got, "<p>boo</p>")
-	assert.Contains(t, got, "<h3 style=\"color: grey; font-size: 0.9em;\">1 June, 2025</h3>")
+	assert.Contains(t, got, "<h3>1 June, 2025</h3>")
 }
 
 func TestHealthz(t *testing.T) {
