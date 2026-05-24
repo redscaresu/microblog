@@ -45,6 +45,12 @@ func (s *MemoryPostStore) FetchLast10BlogPosts() ([]*models.BlogPost, error) {
 }
 
 func (s *MemoryPostStore) Delete(id uuid.UUID) error {
+	for i, v := range s.BlogPosts {
+		if v.ID == id {
+			s.BlogPosts = append(s.BlogPosts[:i], s.BlogPosts[i+1:]...)
+			return nil
+		}
+	}
 	return nil
 }
 

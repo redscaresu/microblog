@@ -2,7 +2,6 @@ package handlers_test
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"microblog/pkg/cache"
 	"microblog/pkg/handlers"
@@ -23,9 +22,8 @@ import (
 func TestMarkdown(t *testing.T) {
 	input := `> This is a test blockquote`
 	output := handlers.RenderMarkdown(input)
-	fmt.Println("Test Input:", input)
-	fmt.Println("Test Output:", output)
-	// Should output: <blockquote><p>This is a test blockquote</p></blockquote>
+	assert.Contains(t, output, "<blockquote>")
+	assert.Contains(t, output, "This is a test blockquote")
 }
 
 func TestMarkdownAgain(t *testing.T) {
@@ -38,10 +36,9 @@ Can the past provide us with a lens with which to understand the present in term
 I read this article, which I think articulates perfectly the skepticism software engineers have towards AI coding assistants.`
 
 	output := handlers.RenderMarkdown(input)
-	fmt.Println("=== ACTUAL CONTENT TEST ===")
-	fmt.Println("Input:", input)
-	fmt.Println("Output:", output)
-	fmt.Println("===========================")
+	assert.Contains(t, output, "<blockquote>")
+	assert.Contains(t, output, "<p>Can the past provide us with a lens")
+	assert.Contains(t, output, "AI coding assistants")
 }
 
 func TestListenAndServe_NoCache(t *testing.T) {
@@ -71,6 +68,11 @@ func TestListenAndServe_NoCache(t *testing.T) {
 	assert.Contains(t, got, "<p>foo</p>")
 	assert.Contains(t, got, "<p>boo</p>")
 	assert.Contains(t, got, "<h3 style=\"color: grey; font-size: 0.9em;\">1 June, 2025</h3>")
+	assert.Contains(t, got, "<title>Ashouri</title>")
+	assert.Contains(t, got, ">GitHub</a>")
+	assert.Contains(t, got, ">LinkedIn</a>")
+	assert.Contains(t, got, "This blog is powered by this")
+	assert.NotContains(t, got, "I am a software engineer who loves writing Go")
 }
 
 func TestListenAndServe_CacheHit(t *testing.T) {
@@ -316,10 +318,12 @@ func TestGetBlogPostByName_ServesFromCacheOnSubsequentRequests(t *testing.T) {
 	defer server.Close()
 
 	// First request
-	req1, err := http.NewRequest(http.MethodGet, server.URL+"/blogpost?name=testtitle", nil)
+	req1, err := http.NewRequest(http.MethodGet, server.URL+"/post/testtitle", nil)
 	require.NoError(t, err)
 	resp1, err := http.DefaultClient.Do(req1)
 	require.NoError(t, err)
+	defer resp1.Body.Close()
+	require.Equal(t, http.StatusOK, resp1.StatusCode)
 	assert.Equal(t, 1, store.AccessCounter)
 
 	body1, err := io.ReadAll(resp1.Body)
@@ -329,7 +333,7 @@ func TestGetBlogPostByName_ServesFromCacheOnSubsequentRequests(t *testing.T) {
 	assert.Contains(t, content1, "Test Content")
 
 	// Second request should use cache
-	req2, err := http.NewRequest(http.MethodGet, server.URL+"/blogpost?name=testtitle", nil)
+	req2, err := http.NewRequest(http.MethodGet, server.URL+"/post/testtitle", nil)
 	require.NoError(t, err)
 
 	resp2, err := http.DefaultClient.Do(req2)
@@ -359,7 +363,7 @@ func TestGetBlogPostByName_NoCache(t *testing.T) {
 	server := newTestServer(t, store, cache)
 	defer server.Close()
 
-	req, err := http.NewRequest(http.MethodGet, server.URL+"/blogpost?name=testtitle", nil)
+	req, err := http.NewRequest(http.MethodGet, server.URL+"/post/testtitle", nil)
 	require.NoError(t, err)
 
 	resp, err := http.DefaultClient.Do(req)
