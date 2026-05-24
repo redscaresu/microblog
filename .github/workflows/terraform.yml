@@ -207,3 +207,13 @@ jobs:
         run: |
           set -o pipefail
           terraform apply -auto-approve | grep -v "Refreshing state\|Reading\|Read complete"
+
+      - name: Post-deploy smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsS https://blog.ashouri.xyz/healthz
+          curl -fsS https://blog.ashouri.xyz/ | grep -q "Ashouri"
+          curl -fsS https://blog.ashouri.xyz/post/thepowerofnightmares | grep -q "The Power of Nightmares"
+          status=$(/usr/bin/curl -s -o /dev/null -w "%{http_code}" https://blog.ashouri.xyz/admin/post/new)
+          test "$status" = "401"
