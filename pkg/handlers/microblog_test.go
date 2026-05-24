@@ -140,6 +140,26 @@ func TestListenAndServe_CacheHit(t *testing.T) {
 	assert.Contains(t, got, "<h3 style=\"color: grey; font-size: 0.9em;\">1 June, 2025</h3>")
 }
 
+func TestHealthz(t *testing.T) {
+	t.Parallel()
+
+	store := &repository.MemoryPostStore{}
+	cache := cache.New([]*models.BlogPost{}, &sync.Mutex{})
+
+	server := newTestServer(t, store, cache)
+	defer server.Close()
+
+	resp, err := http.Get(server.URL + "/healthz")
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	body, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+	assert.Equal(t, "ok", string(body))
+}
+
 func TestSubmitHandler(t *testing.T) {
 	t.Parallel()
 

@@ -84,6 +84,7 @@ func RegisterRoutes(mux *http.ServeMux, app *Application) {
 	//public endpoints
 	mux.HandleFunc("/", app.Home)
 	mux.HandleFunc("/post/{name}", app.GetBlogPostByName)
+	mux.HandleFunc("/healthz", app.Healthz)
 
 	// admin endpoints
 	mux.HandleFunc("/admin/post/new", app.basicAuth(app.NewPostHandler))
@@ -199,6 +200,21 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+func (app *Application) Healthz(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	if _, err := app.PostStore.GetAll(); err != nil {
+		http.Error(w, "unhealthy", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprint(w, "ok")
 }
 
 func (app *Application) GetBlogPostByID(w http.ResponseWriter, r *http.Request) {
