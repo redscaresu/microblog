@@ -13,23 +13,22 @@
         }
 
         :root {
-            --bg: #081111;
-            --panel: rgba(16, 26, 26, 0.9);
-            --ink: #e8f0e8;
-            --muted: #91a39c;
-            --line: #263939;
-            --line-strong: #3c5552;
-            --accent: #49e58f;
-            --accent-dark: #9dd6ff;
+            --paper: #f5f0e6;
+            --panel: rgba(255, 252, 247, 0.78);
+            --ink: #202829;
+            --muted: #626a68;
+            --line: #cfc5b6;
+            --accent: #9a3f2b;
+            --accent-dark: #6f2d1f;
         }
 
         body {
-            font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-family: Georgia, "Times New Roman", serif;
             background:
-                linear-gradient(rgba(73, 229, 143, 0.035) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(73, 229, 143, 0.035) 1px, transparent 1px),
-                radial-gradient(circle at 50% -12rem, rgba(73, 229, 143, 0.16), transparent 34rem),
-                var(--bg);
+                linear-gradient(rgba(32, 40, 41, 0.035) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(32, 40, 41, 0.035) 1px, transparent 1px),
+                radial-gradient(circle at 50% -12rem, rgba(154, 63, 43, 0.14), transparent 34rem),
+                var(--paper);
             background-size: 28px 28px, 28px 28px, auto, auto;
             color: var(--ink);
             margin: 0;
@@ -41,6 +40,7 @@
             margin: 2.75rem auto 0;
             border: 1px solid var(--line);
             background: var(--panel);
+            backdrop-filter: blur(10px);
         }
 
         .blog-post {
@@ -72,10 +72,29 @@
         h1 a::after {
             content: "";
             display: block;
-            width: 2.8em;
+            width: 0.58em;
             height: 0.08em;
             margin-top: 0.16em;
             background: var(--accent);
+            animation: terminal-cursor-blink 1s steps(1, end) infinite;
+        }
+
+        @keyframes terminal-cursor-blink {
+            0%,
+            48% {
+                opacity: 1;
+            }
+
+            49%,
+            100% {
+                opacity: 0;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            h1 a::after {
+                animation: none;
+            }
         }
 
         h2 {
