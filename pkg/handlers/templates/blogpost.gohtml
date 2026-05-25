@@ -7,23 +7,22 @@
     <link rel="icon" href="/assets/ashouri-favicon.svg" type="image/svg+xml">
     <style>
         :root {
-            --bg: #081111;
-            --panel: rgba(16, 26, 26, 0.9);
-            --ink: #e8f0e8;
-            --muted: #91a39c;
-            --line: #263939;
-            --line-strong: #3c5552;
-            --accent: #49e58f;
-            --quote: #101a1a;
+            --paper: #f5f0e6;
+            --panel: rgba(255, 252, 247, 0.82);
+            --ink: #202829;
+            --muted: #626a68;
+            --line: #cfc5b6;
+            --accent: #9a3f2b;
+            --quote: #ebe2d5;
         }
 
         body {
-            font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-family: Georgia, "Times New Roman", serif;
             background:
-                linear-gradient(rgba(73, 229, 143, 0.035) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(73, 229, 143, 0.035) 1px, transparent 1px),
-                radial-gradient(circle at 50% -12rem, rgba(73, 229, 143, 0.16), transparent 34rem),
-                var(--bg);
+                linear-gradient(rgba(32, 40, 41, 0.035) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(32, 40, 41, 0.035) 1px, transparent 1px),
+                radial-gradient(circle at 50% -12rem, rgba(154, 63, 43, 0.14), transparent 34rem),
+                var(--paper);
             background-size: 28px 28px, 28px 28px, auto, auto;
             color: var(--ink);
             margin: 0;
@@ -36,15 +35,16 @@
             padding: 1.75rem;
             border: 1px solid var(--line);
             background: var(--panel);
+            backdrop-filter: blur(10px);
         }
 
         h1 {
             margin: 0 0 1.5rem;
             color: var(--ink);
             font-size: clamp(2.1rem, 6vw, 3.5rem);
-            font-weight: 750;
+            font-weight: 400;
             line-height: 1.08;
-            letter-spacing: -0.05em;
+            letter-spacing: 0;
         }
 
         blockquote {
@@ -53,6 +53,7 @@
             border-left: 4px solid var(--accent);
             background-color: var(--quote);
             color: var(--ink);
+            font-style: italic;
         }
 
         a {
