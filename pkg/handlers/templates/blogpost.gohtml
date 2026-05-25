@@ -7,17 +7,24 @@
     <link rel="icon" href="/assets/ashouri-favicon.svg" type="image/svg+xml">
     <style>
         :root {
-            --paper: #f5f0e6;
-            --ink: #202829;
-            --muted: #626a68;
-            --line: #cfc5b6;
-            --accent: #9a3f2b;
-            --quote: #ebe2d5;
+            --bg: #081111;
+            --panel: rgba(16, 26, 26, 0.9);
+            --ink: #e8f0e8;
+            --muted: #91a39c;
+            --line: #263939;
+            --line-strong: #3c5552;
+            --accent: #49e58f;
+            --quote: #101a1a;
         }
 
         body {
-            font-family: Georgia, "Times New Roman", serif;
-            background-color: var(--paper);
+            font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background:
+                linear-gradient(rgba(73, 229, 143, 0.035) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(73, 229, 143, 0.035) 1px, transparent 1px),
+                radial-gradient(circle at 50% -12rem, rgba(73, 229, 143, 0.16), transparent 34rem),
+                var(--bg);
+            background-size: 28px 28px, 28px 28px, auto, auto;
             color: var(--ink);
             margin: 0;
             padding: 0 1rem 4rem;
@@ -26,17 +33,18 @@
         .container {
             max-width: 760px;
             margin: 2.5rem auto;
-            padding-top: 1.75rem;
-            border-top: 1px solid var(--line);
+            padding: 1.75rem;
+            border: 1px solid var(--line);
+            background: var(--panel);
         }
 
         h1 {
             margin: 0 0 1.5rem;
             color: var(--ink);
             font-size: clamp(2.1rem, 6vw, 3.5rem);
-            font-weight: 400;
+            font-weight: 750;
             line-height: 1.08;
-            letter-spacing: 0;
+            letter-spacing: -0.05em;
         }
 
         blockquote {
@@ -44,7 +52,7 @@
             padding: 1rem 1.25rem;
             border-left: 4px solid var(--accent);
             background-color: var(--quote);
-            font-style: italic;
+            color: var(--ink);
         }
 
         a {
@@ -61,11 +69,21 @@
             line-height: 1.8;
         }
 
+        code, pre {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+        }
+
         .back-link {
             max-width: 760px;
             margin: 1.5rem auto 0;
-            font-family: Arial, sans-serif;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
             font-size: 0.95rem;
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 1.25rem;
+            }
         }
     </style>
 </head>
