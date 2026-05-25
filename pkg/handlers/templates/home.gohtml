@@ -72,10 +72,29 @@
         h1 a::after {
             content: "";
             display: block;
-            width: 2.8em;
+            width: 0.58em;
             height: 0.08em;
             margin-top: 0.16em;
             background: var(--accent);
+            animation: terminal-cursor-blink 1s steps(1, end) infinite;
+        }
+
+        @keyframes terminal-cursor-blink {
+            0%,
+            48% {
+                opacity: 1;
+            }
+
+            49%,
+            100% {
+                opacity: 0;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            h1 a::after {
+                animation: none;
+            }
         }
 
         h2 {
